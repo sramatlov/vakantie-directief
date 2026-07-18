@@ -18,6 +18,10 @@ bij het afvinken.
   **slepen** (desktop).
 - **Snel toevoegen**: onderaan elke lijst of kolom zit een invoerveldje — typen,
   Enter, klaar.
+- **Fleet Hangar**: elke voltooide taak wordt een schip in de hangar bovenaan,
+  gekleurd per sector — je vloot groeit met je week mee.
+- **Mission Report**: menu **⋯** → *Mission report* toont je weekstatistieken en
+  verdiende commendations; op de laatste dag verschijnt hij vanzelf in beeld.
 - **Doorschuiven**: onafgemaakte taken van eerdere dagen geven een waarschuwing
   bovenaan met één knop om ze naar vandaag te verplaatsen.
 - **Nieuwe taak**: knop **+ DIRECTIVE** rechtsonder.

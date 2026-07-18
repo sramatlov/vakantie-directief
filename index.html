@@ -691,6 +691,181 @@
     to   { transform: rotate(-4deg) scale(1); opacity: 1; }
   }
 
+  /* ── fleet hangar ────────────────────────────────────────── */
+  .hangar {
+    border: 1px solid var(--line);
+    border-top: 0;
+    background: var(--panel-2);
+    padding: 8px 12px 10px;
+  }
+  .hangar-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .hangar-label {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .hangar-label::before { content: "▸ "; color: var(--teal); }
+  .hangar-count {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .hangar-field {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    align-items: center;
+    margin-top: 7px;
+    min-height: 17px;
+  }
+  .ship { width: 26px; height: 17px; display: block; }
+  .ship svg { display: block; width: 100%; height: 100%; }
+  .ship.huis    { color: var(--amber); }
+  .ship.project { color: var(--teal); }
+  .ship.admin   { color: #9AB0C6; }
+  .ship.rust    { color: var(--green); }
+  .ship.new { animation: fly-in 0.5s cubic-bezier(.2,.9,.3,1); }
+  @keyframes fly-in {
+    from { transform: translateX(-28px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+  }
+  .ship-slot { width: 7px; height: 7px; border: 1px solid var(--line-bright); }
+  .hangar-empty { font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; }
+
+  /* ── mission report ──────────────────────────────────────── */
+  .final-banner {
+    margin-top: 14px;
+    border: 1px solid var(--amber);
+    background: rgba(242, 163, 60, 0.07);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .final-banner-text {
+    flex: 1 1 auto;
+    min-width: 180px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+  .final-banner-text::before { content: "▤ "; }
+
+  .report {
+    position: fixed;
+    inset: 0;
+    z-index: 85;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    background: rgba(4, 7, 10, 0.88);
+    overflow-y: auto;
+    padding: 24px 12px calc(24px + env(safe-area-inset-bottom));
+  }
+  .report.show { display: flex; }
+  .report-box {
+    border: 1px solid var(--amber);
+    background: var(--panel);
+    max-width: 480px;
+    width: 100%;
+    padding: 18px;
+    position: relative;
+  }
+  .report-box::before, .report-box::after {
+    content: "";
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 1px solid var(--amber);
+  }
+  .report-box::before { top: -5px; left: -5px; border-right: 0; border-bottom: 0; }
+  .report-box::after  { bottom: -5px; right: -5px; border-left: 0; border-top: 0; }
+  .report-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  .report-title {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 3px 0 0;
+  }
+  .report-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin: 14px 0 0;
+  }
+  .report-section-label {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin: 14px 0 4px;
+  }
+  .report-section-label::before { content: "▸ "; color: var(--teal); }
+  .sector-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sector-line:last-child { border-bottom: 0; }
+  .medal {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .medal:last-child { border-bottom: 0; }
+  .medal-glyph { color: var(--amber); flex: 0 0 auto; }
+  .medal-name {
+    flex: 0 0 auto;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .medal-desc { font-size: 11px; color: var(--text-dim); }
+  .report-verdict {
+    margin-top: 14px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+  .report-close {
+    margin-top: 14px;
+    width: 100%;
+    background: var(--amber);
+    color: #17110A;
+    border: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 12px;
+    cursor: pointer;
+  }
+  .report-close:hover { background: #FFB84D; }
+
   /* ── bottom sheet ────────────────────────────────────────── */
   .backdrop {
     position: fixed;
@@ -799,6 +974,7 @@
     .cursor { animation: none; }
     .task-row.just-done::before, .card.just-done::before { animation: none; }
     .secured-box { animation: none; }
+    .ship.new { animation: none; }
     .bar-fill, .sheet, .backdrop, .toast, .task-box::after { transition: none; }
   }
 
@@ -862,6 +1038,15 @@
     </div>
   </div>
 
+  <section class="hangar" aria-label="Fleet hangar">
+    <div class="hangar-head">
+      <div class="hangar-label">Fleet hangar</div>
+      <div class="hangar-count" id="hangar-count">—</div>
+    </div>
+    <div class="hangar-field" id="hangar-field"></div>
+  </section>
+
+  <div id="final-slot"></div>
   <div id="rollover-slot"></div>
 
   <div class="rail-head">
@@ -901,6 +1086,7 @@
 </div>
 
 <div class="menu-pop" id="menu-pop">
+  <button id="menu-report">▤ Mission report</button>
   <button id="menu-export">⇩ Export tasks (backup)</button>
   <button id="menu-import">⇧ Import tasks</button>
 </div>
@@ -916,6 +1102,20 @@
     <div class="secured-day" id="secured-day">—</div>
     <div class="secured-title">Sector secured</div>
     <div class="secured-sub">All daily orders complete</div>
+  </div>
+</div>
+
+<div class="report" id="report">
+  <div class="report-box">
+    <div class="report-eyebrow" id="report-eyebrow">Imperial planning terminal · debrief</div>
+    <h2 class="report-title" id="report-title">Mission report</h2>
+    <div class="report-grid" id="report-grid"></div>
+    <div class="report-section-label">By sector</div>
+    <div id="report-sectors"></div>
+    <div class="report-section-label">Commendations</div>
+    <div id="report-medals"></div>
+    <div class="report-verdict" id="report-verdict">—</div>
+    <button type="button" class="report-close" id="report-close">Close debrief</button>
   </div>
 </div>
 
@@ -1140,6 +1340,127 @@ function renderRow(t, list) {
   li.appendChild(body);
 
   list.appendChild(li);
+}
+
+const SHIP_SVG = '<svg viewBox="0 0 24 16" fill="currentColor" aria-hidden="true">'
+  + '<path d="M2 1 L6 3.5 V12.5 L2 15 Z"/><path d="M22 1 L18 3.5 V12.5 L22 15 Z"/>'
+  + '<rect x="6" y="7.2" width="3.5" height="1.6"/><rect x="14.5" y="7.2" width="3.5" height="1.6"/>'
+  + '<circle cx="12" cy="8" r="3.6"/><circle cx="12" cy="8" r="1.4" fill="#0A0E13"/></svg>';
+
+function renderHangar() {
+  const field = document.getElementById("hangar-field");
+  field.innerHTML = "";
+  const done = tasks.filter(t => t.done).length;
+  document.getElementById("hangar-count").textContent = "Fleet strength " + done + "/" + tasks.length;
+  if (!tasks.length) {
+    field.appendChild(el("span", "hangar-empty", "No directives logged."));
+    return;
+  }
+  tasks.forEach(t => {
+    if (t.done) {
+      const s = el("span", "ship " + t.cat + (flashId === t.id ? " new" : ""));
+      s.title = t.title;
+      s.innerHTML = SHIP_SVG;
+      field.appendChild(s);
+    } else {
+      const slot = el("span", "ship-slot");
+      slot.title = t.title;
+      field.appendChild(slot);
+    }
+  });
+}
+
+/* ── mission report ── */
+function computeReport() {
+  const total = tasks.length;
+  const done = tasks.filter(t => t.done).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const daysSecured = DAYS.filter(d => dayComplete(d.date)).length;
+  const bySector = {};
+  Object.keys(CAT_LABEL).forEach(c => {
+    const all = tasks.filter(t => t.cat === c);
+    bySector[c] = { done: all.filter(t => t.done).length, total: all.length };
+  });
+  const medals = [];
+  if (daysSecured >= 1) medals.push(["Sector sweep", "Secured every order of at least one day"]);
+  if (pct >= 90 && total >= 5) medals.push(["Exemplary service", "Weekly compliance of 90% or higher"]);
+  if (bySector.rust.done >= 2) medals.push(["Balanced operative", "Rest is also a directive — 2+ R&R complete"]);
+  if (bySector.project.done >= 3) medals.push(["Heavy industry", "3+ project directives complete"]);
+  if (total > 0 && backlog().length === 0) medals.push(["Zero backlog", "No unassigned directives remaining"]);
+  if (done >= 10) medals.push(["Fleet admiral", "A fleet of 10+ completed directives"]);
+  return { total, done, pct, daysSecured, bySector, medals };
+}
+
+function reportStat(label, value) {
+  const s = el("div", "stat");
+  s.appendChild(el("div", "stat-label", label));
+  s.appendChild(el("div", "stat-value", value));
+  return s;
+}
+
+function openReport() {
+  const r = computeReport();
+  const isFinal = todayStr() >= DAYS[8].date;
+  document.getElementById("report-title").textContent = isFinal ? "Final mission report" : "Interim mission report";
+
+  const grid = document.getElementById("report-grid");
+  grid.innerHTML = "";
+  grid.appendChild(reportStat("Compliance", r.pct + "%"));
+  grid.appendChild(reportStat("Directives", r.done + "/" + r.total));
+  grid.appendChild(reportStat("Days secured", r.daysSecured + "/9"));
+  grid.appendChild(reportStat("Fleet strength", String(r.done)));
+
+  const sectors = document.getElementById("report-sectors");
+  sectors.innerHTML = "";
+  Object.keys(CAT_LABEL).forEach(c => {
+    const line = el("div", "sector-line");
+    line.appendChild(el("span", "", CAT_LABEL[c]));
+    line.appendChild(el("span", "", r.bySector[c].done + "/" + r.bySector[c].total));
+    sectors.appendChild(line);
+  });
+
+  const medals = document.getElementById("report-medals");
+  medals.innerHTML = "";
+  if (!r.medals.length) {
+    medals.appendChild(el("div", "medal-desc", "None awarded yet — the operation is young."));
+  } else {
+    r.medals.forEach(([name, desc]) => {
+      const m = el("div", "medal");
+      m.appendChild(el("span", "medal-glyph", "✦"));
+      m.appendChild(el("span", "medal-name", name));
+      m.appendChild(el("span", "medal-desc", desc));
+      medals.appendChild(m);
+    });
+  }
+
+  let verdict;
+  if (r.pct >= 90) verdict = "The Emperor is pleased. Enjoy your leave, agent.";
+  else if (r.pct >= 60) verdict = "Acceptable progress. Continue current operations.";
+  else if (r.pct >= 30) verdict = "The Empire expects more. Or less R&R. Your choice.";
+  else verdict = "Operation in early phase. The fleet awaits construction.";
+  document.getElementById("report-verdict").textContent = "VERDICT: " + verdict;
+
+  document.getElementById("report").classList.add("show");
+}
+
+function closeReport() { document.getElementById("report").classList.remove("show"); }
+document.getElementById("report-close").addEventListener("click", closeReport);
+document.getElementById("report").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("report")) closeReport();
+});
+
+function renderFinal() {
+  const slot = document.getElementById("final-slot");
+  slot.innerHTML = "";
+  if (todayStr() < DAYS[8].date) return;
+  const banner = el("div", "final-banner");
+  banner.appendChild(el("span", "final-banner-text",
+    todayStr() === DAYS[8].date ? "Final operational day — mission report available" : "Operation concluded — final mission report"));
+  const btn = el("button", "btn-rollover", "▤ View report");
+  btn.type = "button";
+  btn.addEventListener("click", openReport);
+  banner.appendChild(btn);
+  slot.appendChild(banner);
 }
 
 function quickAddRow(day) {
@@ -1371,6 +1692,8 @@ function renderAll() {
   renderBoard();
   renderStats();
   renderRollover();
+  renderHangar();
+  renderFinal();
   flashId = null;
   if (focusQuickAdd !== null) {
     const scope = view === "board" ? "#board" : ".panel";
@@ -1489,7 +1812,10 @@ document.getElementById("btn-undo").addEventListener("click", () => {
 document.getElementById("btn-cancel").addEventListener("click", closeSheet);
 backdrop.addEventListener("click", closeSheet);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && sheet.classList.contains("open")) closeSheet();
+  if (e.key === "Escape") {
+    if (sheet.classList.contains("open")) closeSheet();
+    if (document.getElementById("report").classList.contains("show")) closeReport();
+  }
 });
 
 document.getElementById("btn-new").addEventListener("click", () => openSheet(null));
@@ -1507,6 +1833,11 @@ document.addEventListener("click", (e) => {
     menuPop.classList.remove("open");
     btnMenu.setAttribute("aria-expanded", "false");
   }
+});
+
+document.getElementById("menu-report").addEventListener("click", () => {
+  menuPop.classList.remove("open");
+  openReport();
 });
 
 document.getElementById("menu-export").addEventListener("click", () => {
