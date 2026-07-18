@@ -584,6 +584,40 @@
   }
   .quick:hover { border-color: var(--teal); background: rgba(84,200,206,0.1); }
 
+  .drag-handle {
+    flex: 0 0 auto;
+    width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 0;
+    border-left: 1px solid var(--line);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 15px;
+    cursor: grab;
+    touch-action: none;
+    padding: 0;
+  }
+  .drag-handle:hover { color: var(--amber); }
+  .drag-handle:active { cursor: grabbing; }
+  .drag-handle:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+  .card .drag-handle {
+    width: 30px;
+    height: 30px;
+    margin: -4px -4px -4px 0;
+    border-left: 0;
+    font-size: 13px;
+  }
+  .task-row.reordering, .card.reordering {
+    background: #16202C;
+    outline: 1px solid var(--teal);
+    opacity: 0.92;
+    position: relative;
+    z-index: 5;
+  }
+
   .task-row.just-done::before, .card.just-done::before {
     content: "";
     position: absolute;
@@ -1383,6 +1417,60 @@ function moveTask(t, day) {
   renderAll();
 }
 
+/* ── drag-to-reorder (pointer events, works on touch) ── */
+function commitOrder(ul) {
+  const ids = Array.from(ul.querySelectorAll("[data-id]")).map(x => x.dataset.id);
+  const set = new Set(ids);
+  let k = 0;
+  tasks = tasks.map(t => set.has(t.id) ? tasks.find(x => x.id === ids[k++]) : t);
+  saveTasks();
+  renderAll();
+}
+
+function attachReorder(handle, li) {
+  handle.addEventListener("dragstart", (e) => e.preventDefault());
+  handle.addEventListener("pointerdown", (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    const ul = li.parentElement;
+    const wasDraggable = li.draggable;
+    li.draggable = false;
+    li.classList.add("reordering");
+    handle.setPointerCapture(e.pointerId);
+
+    const move = (ev) => {
+      const y = ev.clientY;
+      const siblings = Array.from(ul.querySelectorAll("[data-id]")).filter(x => x !== li);
+      let placed = false;
+      for (const sib of siblings) {
+        const r = sib.getBoundingClientRect();
+        if (y < r.top + r.height / 2) { ul.insertBefore(li, sib); placed = true; break; }
+      }
+      if (!placed) ul.appendChild(li);
+    };
+    const up = () => {
+      try { handle.releasePointerCapture(e.pointerId); } catch {}
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", up);
+      handle.removeEventListener("pointercancel", up);
+      li.classList.remove("reordering");
+      li.draggable = wasDraggable;
+      commitOrder(ul);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", up);
+    handle.addEventListener("pointercancel", up);
+  });
+}
+
+function dragHandle(li, t) {
+  const handle = el("button", "drag-handle", "≡");
+  handle.type = "button";
+  handle.setAttribute("aria-label", "Reorder: " + t.title);
+  attachReorder(handle, li);
+  return handle;
+}
+
 function toggleDone(t) {
   const wasComplete = t.day ? dayComplete(t.day) : false;
   t.done = !t.done;
@@ -1401,6 +1489,7 @@ function toggleDone(t) {
 
 function renderRow(t, list) {
   const li = el("li", "task-row" + (t.done ? " done" : ""));
+  li.dataset.id = t.id;
   if (flashId === t.id && t.done) li.classList.add("just-done");
 
   const check = el("button", "task-check");
@@ -1440,6 +1529,7 @@ function renderRow(t, list) {
   body.appendChild(meta);
   body.addEventListener("click", () => openSheet(t.id));
   li.appendChild(body);
+  li.appendChild(dragHandle(li, t));
 
   list.appendChild(li);
 }
@@ -1591,6 +1681,7 @@ function quickAddRow(day) {
 
 function renderCard(t, ul) {
   const li = el("li", "card" + (t.done ? " done" : ""));
+  li.dataset.id = t.id;
   if (flashId === t.id && t.done) li.classList.add("just-done");
   li.draggable = true;
   li.addEventListener("dragstart", (e) => {
@@ -1637,6 +1728,7 @@ function renderCard(t, ul) {
   main.appendChild(meta);
   main.addEventListener("click", () => openSheet(t.id));
   li.appendChild(main);
+  li.appendChild(dragHandle(li, t));
 
   ul.appendChild(li);
 }
