@@ -2127,10 +2127,13 @@ renderAll();
   ];
   const log = document.getElementById("boot-log");
   const barFill = document.getElementById("boot-bar-fill");
-  let i = 0, timer = null;
+  let i = 0, timer = null, watchdog = null, finished = false;
 
   function finish() {
+    if (finished) return;
+    finished = true;
     clearTimeout(timer);
+    clearTimeout(watchdog);
     try { sessionStorage.setItem("vd_booted", "1"); } catch {}
     bootEl.classList.add("done");
     setTimeout(() => bootEl.remove(), 500);
@@ -2139,6 +2142,7 @@ renderAll();
     if (i >= lines.length) {
       loginBtn.classList.add("show");
       loginBtn.focus();
+      timer = setTimeout(finish, 900);
       return;
     }
     const row = el("div", "boot-line");
@@ -2150,6 +2154,7 @@ renderAll();
     timer = setTimeout(step, 270);
   }
   loginBtn.addEventListener("click", finish);
+  watchdog = setTimeout(finish, 6000);
   timer = setTimeout(step, 300);
 })();
 </script>
