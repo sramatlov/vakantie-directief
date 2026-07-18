@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <title>Vakantie Directief herstellen</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #080b0c; color: #f5a623; }
+    main { width: min(34rem, calc(100% - 3rem)); text-align: center; }
+    p { color: #d7c6a4; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>App wordt hersteld…</h1>
+    <p id="status">De oude app-cache wordt verwijderd. Je taken blijven bewaard.</p>
+  </main>
+  <script>
+    (async function repair() {
+      const status = document.getElementById("status");
+      try {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map(registration => registration.unregister()));
+        }
+        if ("caches" in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map(name => caches.delete(name)));
+        }
+        status.textContent = "Herstel voltooid. De app wordt opnieuw geopend…";
+        location.replace("./?repaired=" + Date.now());
+      } catch (error) {
+        status.textContent = "Automatisch herstel lukte niet. Sluit alle tabbladen van deze app en open deze herstelpagina opnieuw.";
+      }
+    })();
+  </script>
+</body>
+</html>
