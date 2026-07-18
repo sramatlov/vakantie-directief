@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,7 +9,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<title>VAKANTIE-DIRECTIEF · 18.07–26.07</title>
+<title>VACATION DIRECTIVE · 18–26 JUL</title>
 <style>
   :root {
     --ground: #0A0E13;
@@ -187,6 +187,40 @@
   .day-cell.today .d-abbrev::after { content: " ●"; color: var(--red); }
   .day-cell.complete .d-num { color: var(--green); }
 
+  /* ── overdue banner ──────────────────────────────────────── */
+  .rollover {
+    margin-top: 14px;
+    border: 1px solid var(--red);
+    background: rgba(229, 72, 77, 0.08);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .rollover-text {
+    flex: 1 1 auto;
+    min-width: 180px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red);
+  }
+  .rollover-text::before { content: "⚠ "; }
+  .btn-rollover {
+    flex: 0 0 auto;
+    background: none;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    cursor: pointer;
+  }
+  .btn-rollover:hover { background: rgba(242,163,60,0.12); }
+
   /* ── panels & task rows ──────────────────────────────────── */
   .panel {
     margin-top: 14px;
@@ -241,7 +275,6 @@
   .task-check {
     flex: 0 0 auto;
     width: 52px;
-    min-height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -274,9 +307,10 @@
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 9px 12px;
     background: none;
     border: 0;
     cursor: pointer;
@@ -289,16 +323,21 @@
   .task-body:hover { background: #131C28; }
   .task-body:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
 
-  .task-title { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .task-title { min-width: 0; overflow-wrap: anywhere; }
   .task-row.done .task-title {
     color: var(--text-dim);
     text-decoration: line-through;
     text-decoration-color: var(--green);
     text-decoration-thickness: 1px;
   }
+  .task-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
 
   .chip {
-    flex: 0 0 auto;
     font-size: 9px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -311,7 +350,6 @@
   .chip.admin   { color: #9AB0C6;      border-color: var(--line-bright); }
 
   .stamp {
-    flex: 0 0 auto;
     font-size: 9px;
     letter-spacing: 0.2em;
     color: var(--green);
@@ -320,6 +358,19 @@
     display: none;
   }
   .task-row.done .stamp { display: inline-block; }
+
+  .quick {
+    background: none;
+    border: 1px solid var(--teal-dim);
+    color: var(--teal);
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+  .quick:hover { border-color: var(--teal); background: rgba(84,200,206,0.1); }
 
   .task-row.just-done::before {
     content: "";
@@ -422,7 +473,90 @@
   .menu-pop button:last-child { border-bottom: 0; }
   .menu-pop button:hover { background: #131C28; color: var(--amber); }
 
-  /* ── bottom sheet (nieuw/bewerk) ─────────────────────────── */
+  /* ── undo toast ──────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    transform: translate(-50%, 16px);
+    z-index: 55;
+    background: var(--panel);
+    border: 1px solid var(--line-bright);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 10px 10px 14px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .toast button {
+    background: none;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .toast button:hover { background: rgba(242,163,60,0.12); }
+
+  /* ── sector secured overlay ──────────────────────────────── */
+  .secured {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 7, 10, 0.86);
+  }
+  .secured.show { display: flex; }
+  .secured-box {
+    border: 2px solid var(--green);
+    outline: 1px solid var(--green);
+    outline-offset: 5px;
+    padding: 26px 34px;
+    text-align: center;
+    transform: rotate(-4deg);
+    background: rgba(12, 18, 25, 0.9);
+    animation: stamp-in 0.35s cubic-bezier(.2,1.4,.4,1) both;
+  }
+  .secured-day {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--amber);
+    text-transform: uppercase;
+  }
+  .secured-title {
+    font-family: var(--display);
+    font-size: clamp(28px, 8vw, 44px);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin: 6px 0 4px;
+  }
+  .secured-sub {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  @keyframes stamp-in {
+    from { transform: rotate(-4deg) scale(1.9); opacity: 0; }
+    to   { transform: rotate(-4deg) scale(1); opacity: 1; }
+  }
+
+  /* ── bottom sheet ────────────────────────────────────────── */
   .backdrop {
     position: fixed;
     inset: 0;
@@ -472,7 +606,7 @@
     border: 1px solid var(--line-bright);
     color: var(--text);
     font-family: var(--mono);
-    font-size: 16px; /* voorkomt iOS-zoom bij focus */
+    font-size: 16px; /* prevents iOS zoom-on-focus */
     padding: 11px 10px;
     border-radius: 0;
     -webkit-appearance: none;
@@ -481,11 +615,7 @@
   .sheet input:focus, .sheet select:focus { outline: 1px solid var(--teal); }
   .sheet-field { margin-bottom: 10px; }
   .sheet-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .sheet-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-  }
+  .sheet-actions { display: flex; gap: 10px; margin-top: 14px; }
   .btn-save {
     flex: 1 1 auto;
     background: var(--amber);
@@ -533,7 +663,8 @@
   @media (prefers-reduced-motion: reduce) {
     .cursor { animation: none; }
     .task-row.just-done::before { animation: none; }
-    .bar-fill, .sheet, .backdrop, .task-box::after { transition: none; }
+    .secured-box { animation: none; }
+    .bar-fill, .sheet, .backdrop, .toast, .task-box::after { transition: none; }
   }
 
   @media (max-width: 560px) {
@@ -568,9 +699,9 @@
       </svg>
     </div>
     <div class="head-main">
-      <div class="eyebrow">Imperiaal planningsterminal · sector thuis</div>
-      <h1>Vakantie-directief 18.07 — 26.07</h1>
-      <div class="agent-line">AGENT <b>ROBBY</b> · TOEGANGSNIVEAU <b>VOLLEDIG</b> · STATUS <b>VERLOF</b></div>
+      <div class="eyebrow">Imperial planning terminal · home sector</div>
+      <h1>Vacation Directive 18.07 — 26.07</h1>
+      <div class="agent-line">AGENT <b>ROBBY</b> · CLEARANCE <b>FULL</b> · STATUS <b>ON LEAVE</b></div>
     </div>
     <div class="head-clock">
       <div class="clock-time" id="clock">--:--:--</div>
@@ -580,28 +711,30 @@
 
   <div class="status-strip">
     <div class="stat">
-      <div class="stat-label">Weekconformiteit</div>
+      <div class="stat-label">Weekly compliance</div>
       <div class="stat-value" id="stat-week">—</div>
       <div class="bar"><div class="bar-fill" id="bar-week"></div></div>
     </div>
     <div class="stat">
-      <div class="stat-label">Dagorders vandaag</div>
+      <div class="stat-label">Today's orders</div>
       <div class="stat-value" id="stat-today">—</div>
       <div class="bar"><div class="bar-fill teal" id="bar-today"></div></div>
     </div>
     <div class="stat">
-      <div class="stat-label">Resterend verlof</div>
+      <div class="stat-label">Leave remaining</div>
       <div class="stat-value" id="stat-left">—</div>
       <div class="bar"><div class="bar-fill green" id="bar-left"></div></div>
     </div>
   </div>
 
-  <div class="rail-label">Operationele dagen</div>
-  <div class="day-rail" id="day-rail" role="tablist" aria-label="Dagen"></div>
+  <div id="rollover-slot"></div>
+
+  <div class="rail-label">Operational days</div>
+  <div class="day-rail" id="day-rail" role="tablist" aria-label="Days"></div>
 
   <section class="panel" aria-live="polite">
     <div class="panel-head">
-      <div class="panel-title">Dagorders — <span class="accent" id="panel-day">—</span></div>
+      <div class="panel-title">Daily orders — <span class="accent" id="panel-day">—</span></div>
       <div class="panel-meta" id="panel-count">—</div>
     </div>
     <ul class="task-list" id="task-list"></ul>
@@ -609,7 +742,7 @@
 
   <section class="panel">
     <div class="panel-head">
-      <div class="panel-title">Ongeplande <span class="accent">directieven</span></div>
+      <div class="panel-title">Unassigned <span class="accent">directives</span></div>
       <div class="panel-meta" id="backlog-count">—</div>
     </div>
     <ul class="task-list" id="backlog-list"></ul>
@@ -617,50 +750,63 @@
 </div>
 
 <div class="toolbar">
-  <div class="toolbar-status" id="footer-text">CONFORMITEIT — <span class="cursor">▮</span></div>
-  <button class="btn-new" id="btn-new">+ Directief</button>
+  <div class="toolbar-status" id="footer-text">COMPLIANCE — <span class="cursor">▮</span></div>
+  <button class="btn-new" id="btn-new">+ Directive</button>
   <button class="btn-menu" id="btn-menu" aria-label="Menu" aria-expanded="false">⋯</button>
 </div>
 
 <div class="menu-pop" id="menu-pop">
-  <button id="menu-export">⇩ Exporteer taken (backup)</button>
-  <button id="menu-import">⇧ Importeer taken</button>
+  <button id="menu-export">⇩ Export tasks (backup)</button>
+  <button id="menu-import">⇧ Import tasks</button>
 </div>
 <input type="file" id="import-file" accept=".json,application/json" hidden>
 
+<div class="toast" id="toast" role="status">
+  <span>Directive deleted</span>
+  <button id="btn-undo">Undo</button>
+</div>
+
+<div class="secured" id="secured">
+  <div class="secured-box">
+    <div class="secured-day" id="secured-day">—</div>
+    <div class="secured-title">Sector secured</div>
+    <div class="secured-sub">All daily orders complete</div>
+  </div>
+</div>
+
 <div class="backdrop" id="backdrop"></div>
 <form class="sheet" id="sheet">
-  <h2 class="sheet-title" id="sheet-title">Nieuw directief</h2>
+  <h2 class="sheet-title" id="sheet-title">New directive</h2>
   <div class="sheet-field">
-    <label for="f-title">Omschrijving</label>
-    <input id="f-title" type="text" maxlength="120" placeholder="bv. Schuur opruimen" autocomplete="off">
+    <label for="f-title">Description</label>
+    <input id="f-title" type="text" maxlength="120" placeholder="e.g. Clear out the shed" autocomplete="off">
   </div>
   <div class="sheet-row-2 sheet-field">
     <div>
-      <label for="f-day">Dag</label>
+      <label for="f-day">Day</label>
       <select id="f-day"></select>
     </div>
     <div>
       <label for="f-cat">Sector</label>
       <select id="f-cat">
-        <option value="huis">HUIS</option>
+        <option value="huis">HOME</option>
         <option value="project">PROJECT</option>
         <option value="admin">ADMIN</option>
-        <option value="rust">ONTSPANNING</option>
+        <option value="rust">R&amp;R</option>
       </select>
     </div>
   </div>
   <div class="sheet-actions">
-    <button type="submit" class="btn-save" id="btn-save">Registreer</button>
-    <button type="button" class="btn-delete" id="btn-delete" hidden>Wis</button>
-    <button type="button" class="btn-cancel" id="btn-cancel">Sluit</button>
+    <button type="submit" class="btn-save" id="btn-save">Log directive</button>
+    <button type="button" class="btn-delete" id="btn-delete" hidden>Delete</button>
+    <button type="button" class="btn-cancel" id="btn-cancel">Close</button>
   </div>
 </form>
 
 <script>
 /* ══════════════════════════════════════════════════════════════
-   VAKANTIE-DIRECTIEF v2 — alle taken leven in localStorage.
-   Bij eerste start wordt eenmalig de startlijst geladen.
+   VACATION DIRECTIVE v3 — all tasks live in localStorage.
+   The seed list below is only loaded on first launch.
    ══════════════════════════════════════════════════════════════ */
 const SEED_TASKS = [
   { id: "t1", title: "Huis opruimen",                                   day: "2026-07-18", cat: "huis",    done: false },
@@ -675,23 +821,29 @@ const SEED_TASKS = [
 ];
 
 const DAYS = [
-  { date: "2026-07-18", abbrev: "ZA", label: "Zaterdag 18.07" },
-  { date: "2026-07-19", abbrev: "ZO", label: "Zondag 19.07" },
-  { date: "2026-07-20", abbrev: "MA", label: "Maandag 20.07" },
-  { date: "2026-07-21", abbrev: "DI", label: "Dinsdag 21.07" },
-  { date: "2026-07-22", abbrev: "WO", label: "Woensdag 22.07" },
-  { date: "2026-07-23", abbrev: "DO", label: "Donderdag 23.07" },
-  { date: "2026-07-24", abbrev: "VR", label: "Vrijdag 24.07" },
-  { date: "2026-07-25", abbrev: "ZA", label: "Zaterdag 25.07" },
-  { date: "2026-07-26", abbrev: "ZO", label: "Zondag 26.07" }
+  { date: "2026-07-18", abbrev: "SAT", label: "Saturday 18.07" },
+  { date: "2026-07-19", abbrev: "SUN", label: "Sunday 19.07" },
+  { date: "2026-07-20", abbrev: "MON", label: "Monday 20.07" },
+  { date: "2026-07-21", abbrev: "TUE", label: "Tuesday 21.07" },
+  { date: "2026-07-22", abbrev: "WED", label: "Wednesday 22.07" },
+  { date: "2026-07-23", abbrev: "THU", label: "Thursday 23.07" },
+  { date: "2026-07-24", abbrev: "FRI", label: "Friday 24.07" },
+  { date: "2026-07-25", abbrev: "SAT", label: "Saturday 25.07" },
+  { date: "2026-07-26", abbrev: "SUN", label: "Sunday 26.07" }
 ];
-const CAT_LABEL = { huis: "HUIS", project: "PROJECT", admin: "ADMIN", rust: "ONTSPANNING" };
+const CAT_LABEL = { huis: "HOME", project: "PROJECT", admin: "ADMIN", rust: "R&R" };
 const LS_TASKS = "vd2_tasks";
 
-function todayStr() {
-  const d = new Date();
+function dateStr(d) {
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
+function todayStr() { return dateStr(new Date()); }
+function tomorrowStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return dateStr(d);
+}
+function inWindow(day) { return day >= DAYS[0].date && day <= DAYS[8].date; }
 
 let tasks = (() => {
   try {
@@ -702,29 +854,68 @@ let tasks = (() => {
 })();
 saveTasks();
 
-let selectedDay = todayStr() >= DAYS[0].date && todayStr() <= DAYS[8].date ? todayStr() : DAYS[0].date;
+let selectedDay = inWindow(todayStr()) ? todayStr() : DAYS[0].date;
 let editingId = null;
+let pendingDelete = null;
+let toastTimer = null;
+let securedTimer = null;
 
 function saveTasks() { try { localStorage.setItem(LS_TASKS, JSON.stringify(tasks)); } catch {} }
 function tasksFor(day) { return tasks.filter(t => t.day === day); }
 function backlog() { return tasks.filter(t => !t.day); }
+function overdue() {
+  const today = todayStr();
+  if (!inWindow(today)) return [];
+  return tasks.filter(t => t.day && t.day < today && !t.done);
+}
+function dayComplete(day) {
+  const list = tasksFor(day);
+  return list.length > 0 && list.every(t => t.done);
+}
 function newId() { return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
-/* ── audio blip ── */
+/* ── audio ── */
 let audioCtx = null;
+function tone(freq, start, dur, vol) {
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = "square";
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, audioCtx.currentTime + start);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + start + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(audioCtx.currentTime + start);
+  o.stop(audioCtx.currentTime + start + dur + 0.02);
+}
 function blip(done) {
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.type = "square";
-    o.frequency.value = done ? 660 : 330;
-    if (done) o.frequency.setValueAtTime(880, audioCtx.currentTime + 0.07);
-    g.gain.setValueAtTime(0.05, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start(); o.stop(audioCtx.currentTime + 0.16);
+    if (done) { tone(660, 0, 0.08, 0.05); tone(880, 0.07, 0.1, 0.05); }
+    else { tone(330, 0, 0.12, 0.05); }
   } catch {}
 }
+function fanfare() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    tone(660, 0, 0.09, 0.05);
+    tone(880, 0.09, 0.09, 0.05);
+    tone(1100, 0.18, 0.2, 0.06);
+  } catch {}
+}
+
+/* ── celebration ── */
+function celebrate(dayLabel) {
+  document.getElementById("secured-day").textContent = dayLabel;
+  const overlay = document.getElementById("secured");
+  overlay.classList.add("show");
+  fanfare();
+  if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
+  clearTimeout(securedTimer);
+  securedTimer = setTimeout(() => overlay.classList.remove("show"), 2000);
+}
+document.getElementById("secured").addEventListener("click", () => {
+  clearTimeout(securedTimer);
+  document.getElementById("secured").classList.remove("show");
+});
 
 /* ── rendering ── */
 function el(tag, cls, text) {
@@ -734,15 +925,24 @@ function el(tag, cls, text) {
   return n;
 }
 
+function moveTask(t, day) {
+  t.day = day;
+  saveTasks();
+  if (day) selectedDay = day;
+  blip(true);
+  renderAll();
+}
+
 function renderRow(t, list) {
   const li = el("li", "task-row" + (t.done ? " done" : ""));
 
   const check = el("button", "task-check");
   check.type = "button";
-  check.setAttribute("aria-label", (t.done ? "Heropen: " : "Vink af: ") + t.title);
+  check.setAttribute("aria-label", (t.done ? "Reopen: " : "Complete: ") + t.title);
   check.setAttribute("aria-pressed", t.done ? "true" : "false");
   check.appendChild(el("span", "task-box"));
   check.addEventListener("click", () => {
+    const wasComplete = t.day ? dayComplete(t.day) : false;
     t.done = !t.done;
     saveTasks();
     li.classList.toggle("done", t.done);
@@ -754,21 +954,65 @@ function renderRow(t, list) {
       if (navigator.vibrate) navigator.vibrate(30);
     }
     blip(t.done);
+    if (t.done && t.day && !wasComplete && dayComplete(t.day)) {
+      const d = DAYS.find(x => x.date === t.day);
+      celebrate(d ? d.label : t.day);
+    }
     renderStats();
     renderRail();
+    renderRollover();
   });
   li.appendChild(check);
 
   const body = el("button", "task-body");
   body.type = "button";
-  body.setAttribute("aria-label", "Bewerk: " + t.title);
+  body.setAttribute("aria-label", "Edit: " + t.title);
   body.appendChild(el("span", "task-title", t.title));
-  body.appendChild(el("span", "chip " + t.cat, CAT_LABEL[t.cat] || t.cat));
-  body.appendChild(el("span", "stamp", "VOLTOOID"));
+  const meta = el("span", "task-meta");
+  meta.appendChild(el("span", "chip " + t.cat, CAT_LABEL[t.cat] || t.cat));
+  meta.appendChild(el("span", "stamp", "COMPLETE"));
+  if (!t.day && !t.done) {
+    const today = todayStr(), tmrw = tomorrowStr();
+    if (inWindow(today)) {
+      const q = el("button", "quick", "▸ Today");
+      q.type = "button";
+      q.addEventListener("click", (e) => { e.stopPropagation(); moveTask(t, today); });
+      meta.appendChild(q);
+    }
+    if (inWindow(tmrw)) {
+      const q = el("button", "quick", "▸ Tmrw");
+      q.type = "button";
+      q.addEventListener("click", (e) => { e.stopPropagation(); moveTask(t, tmrw); });
+      meta.appendChild(q);
+    }
+  }
+  body.appendChild(meta);
   body.addEventListener("click", () => openSheet(t.id));
   li.appendChild(body);
 
   list.appendChild(li);
+}
+
+function renderRollover() {
+  const slot = document.getElementById("rollover-slot");
+  slot.innerHTML = "";
+  const late = overdue();
+  if (!late.length) return;
+  const banner = el("div", "rollover");
+  banner.appendChild(el("span", "rollover-text",
+    late.length + (late.length === 1 ? " directive" : " directives") + " overdue from previous days"));
+  const btn = el("button", "btn-rollover", "→ Reassign to today");
+  btn.type = "button";
+  btn.addEventListener("click", () => {
+    const today = todayStr();
+    late.forEach(t => { t.day = today; });
+    saveTasks();
+    selectedDay = today;
+    blip(true);
+    renderAll();
+  });
+  banner.appendChild(btn);
+  slot.appendChild(banner);
 }
 
 function renderList() {
@@ -778,22 +1022,22 @@ function renderList() {
   list.innerHTML = "";
   const dayTasks = tasksFor(selectedDay);
   if (!dayTasks.length) {
-    list.appendChild(el("li", "empty-note", "Geen dagorders geregistreerd. Tik op + DIRECTIEF om er een toe te voegen."));
+    list.appendChild(el("li", "empty-note", "No orders logged for this day. Tap + DIRECTIVE to add one."));
   } else {
     dayTasks.forEach(t => renderRow(t, list));
   }
   const done = dayTasks.filter(t => t.done).length;
-  document.getElementById("panel-count").textContent = done + "/" + dayTasks.length + " voltooid";
+  document.getElementById("panel-count").textContent = done + "/" + dayTasks.length + " complete";
 
   const bl = document.getElementById("backlog-list");
   bl.innerHTML = "";
   const blTasks = backlog();
   if (!blTasks.length) {
-    bl.appendChild(el("li", "empty-note", "Geen ongeplande directieven. Uitstekend werk, agent."));
+    bl.appendChild(el("li", "empty-note", "No unassigned directives. Outstanding work, agent."));
   } else {
     blTasks.forEach(t => renderRow(t, bl));
   }
-  document.getElementById("backlog-count").textContent = blTasks.length + " open";
+  document.getElementById("backlog-count").textContent = blTasks.length + " pending";
 }
 
 function renderRail() {
@@ -826,26 +1070,26 @@ function renderStats() {
   document.getElementById("bar-week").style.width = pct + "%";
 
   const today = todayStr();
-  const refDay = today >= DAYS[0].date && today <= DAYS[8].date ? today : selectedDay;
+  const refDay = inWindow(today) ? today : selectedDay;
   const tToday = tasksFor(refDay);
   const dToday = tToday.filter(t => t.done).length;
-  document.getElementById("stat-today").textContent = dToday + "/" + tToday.length + " voltooid";
+  document.getElementById("stat-today").textContent = dToday + "/" + tToday.length + " complete";
   document.getElementById("bar-today").style.width = (tToday.length ? dToday / tToday.length * 100 : 0) + "%";
 
   const end = new Date(2026, 6, 26);
   const now = new Date();
   now.setHours(0,0,0,0);
   const left = Math.max(0, Math.round((end - now) / 86400000) + 1);
-  document.getElementById("stat-left").textContent = left + (left === 1 ? " dag" : " dagen");
+  document.getElementById("stat-left").textContent = left + (left === 1 ? " day" : " days");
   document.getElementById("bar-left").style.width = (left / 9 * 100) + "%";
 
   const blocks = Math.round(pct / 10);
   document.getElementById("footer-text").innerHTML =
-    "CONFORMITEIT " + pct + "% <span class='blocks'>" + "▮".repeat(blocks) + "░".repeat(10 - blocks) + "</span> · " +
+    "COMPLIANCE " + pct + "% <span class='blocks'>" + "▮".repeat(blocks) + "░".repeat(10 - blocks) + "</span> · " +
     done + "/" + tasks.length + " <span class='cursor'>▮</span>";
 }
 
-function renderAll() { renderRail(); renderList(); renderStats(); }
+function renderAll() { renderRail(); renderList(); renderStats(); renderRollover(); }
 
 /* ── clock ── */
 function tickClock() {
@@ -862,18 +1106,18 @@ tickClock();
 const sheet = document.getElementById("sheet");
 const backdrop = document.getElementById("backdrop");
 const daySelect = document.getElementById("f-day");
-daySelect.appendChild(new Option("ONGEPLAND", ""));
+daySelect.appendChild(new Option("UNASSIGNED", ""));
 DAYS.forEach(d => daySelect.appendChild(new Option(d.abbrev + " " + d.label.split(" ")[1], d.date)));
 
 function openSheet(id) {
   editingId = id || null;
   const t = id ? tasks.find(x => x.id === id) : null;
-  document.getElementById("sheet-title").textContent = t ? "Bewerk directief" : "Nieuw directief";
+  document.getElementById("sheet-title").textContent = t ? "Edit directive" : "New directive";
   document.getElementById("f-title").value = t ? t.title : "";
   daySelect.value = t ? (t.day || "") : selectedDay;
   document.getElementById("f-cat").value = t ? t.cat : "huis";
   document.getElementById("btn-delete").hidden = !t;
-  document.getElementById("btn-save").textContent = t ? "Sla op" : "Registreer";
+  document.getElementById("btn-save").textContent = t ? "Save" : "Log directive";
   sheet.classList.add("open");
   backdrop.classList.add("open");
   if (!t) document.getElementById("f-title").focus();
@@ -903,12 +1147,38 @@ sheet.addEventListener("submit", (e) => {
   renderAll();
 });
 
+/* ── delete + undo ── */
+function showToast() {
+  const toast = document.getElementById("toast");
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+    pendingDelete = null;
+  }, 5000);
+}
+
 document.getElementById("btn-delete").addEventListener("click", () => {
   if (!editingId) return;
-  tasks = tasks.filter(x => x.id !== editingId);
+  const idx = tasks.findIndex(x => x.id === editingId);
+  if (idx === -1) { closeSheet(); return; }
+  pendingDelete = { task: tasks[idx], index: idx };
+  tasks.splice(idx, 1);
   saveTasks();
   closeSheet();
   renderAll();
+  showToast();
+});
+
+document.getElementById("btn-undo").addEventListener("click", () => {
+  if (pendingDelete) {
+    tasks.splice(Math.min(pendingDelete.index, tasks.length), 0, pendingDelete.task);
+    pendingDelete = null;
+    saveTasks();
+    renderAll();
+  }
+  clearTimeout(toastTimer);
+  document.getElementById("toast").classList.remove("show");
 });
 
 document.getElementById("btn-cancel").addEventListener("click", closeSheet);
@@ -936,12 +1206,12 @@ document.addEventListener("click", (e) => {
 
 document.getElementById("menu-export").addEventListener("click", () => {
   const blob = new Blob(
-    [JSON.stringify({ app: "vakantie-directief", version: 2, tasks }, null, 2)],
+    [JSON.stringify({ app: "vacation-directive", version: 3, tasks }, null, 2)],
     { type: "application/json" }
   );
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "vakantie-directief-backup.json";
+  a.download = "vacation-directive-backup.json";
   a.click();
   URL.revokeObjectURL(a.href);
   menuPop.classList.remove("open");
@@ -960,10 +1230,10 @@ document.getElementById("import-file").addEventListener("change", (e) => {
     try {
       const data = JSON.parse(reader.result);
       const imported = Array.isArray(data) ? data : data.tasks;
-      if (!Array.isArray(imported)) throw new Error("geen takenlijst");
+      if (!Array.isArray(imported)) throw new Error("not a task list");
       const valid = imported.filter(t => t && typeof t.title === "string");
-      if (!valid.length) throw new Error("lege lijst");
-      if (confirm("Importeer " + valid.length + " taken? Dit vervangt je huidige lijst.")) {
+      if (!valid.length) throw new Error("empty list");
+      if (confirm("Import " + valid.length + " tasks? This replaces your current list.")) {
         tasks = valid.map(t => ({
           id: t.id || newId(),
           title: t.title,
@@ -975,7 +1245,7 @@ document.getElementById("import-file").addEventListener("change", (e) => {
         renderAll();
       }
     } catch {
-      alert("Import mislukt: dit is geen geldig backup-bestand van deze app.");
+      alert("Import failed: this is not a valid backup file from this app.");
     }
     e.target.value = "";
   };

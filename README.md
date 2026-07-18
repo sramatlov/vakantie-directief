@@ -1,15 +1,21 @@
-# Vakantie-Directief 🛰️
+# Vacation Directive 🛰️
 
-Een taken-app in de stijl van een Imperiale agent-tablet, gebouwd voor de vakantieweek
-**zaterdag 18 t/m zondag 26 juli 2026**. Dagorders, ongeplande directieven,
-weekconformiteit en een VOLTOOID-stempel met terminal-blip bij het afvinken.
+Een taken-app in de stijl van een Imperiale agent-tablet (UI in sci-fi Engels),
+gebouwd voor de vakantieweek **zaterdag 18 t/m zondag 26 juli 2026**. Daily orders,
+unassigned directives, weekly compliance en een COMPLETE-stempel met terminal-blip
+bij het afvinken.
 
 ## Gebruik
 
-- **Afvinken**: tik op het vinkvak links van een taak.
+- **Afvinken**: tik op het vinkvak links van een taak. Is de hele dag af, dan
+  verschijnt een **SECTOR SECURED**-stempel over het scherm.
 - **Bewerken / verplaatsen / wissen**: tik op de taak zelf — er opent een paneel
-  waarin je omschrijving, dag en sector kunt aanpassen.
-- **Nieuwe taak**: knop **+ DIRECTIEF** rechtsonder.
+  waarin je omschrijving, dag en sector kunt aanpassen. Na wissen kun je 5 seconden
+  op **Undo** tikken.
+- **Snel inplannen**: ongeplande taken hebben knopjes **▸ Today** / **▸ Tmrw**.
+- **Doorschuiven**: onafgemaakte taken van eerdere dagen geven een waarschuwing
+  bovenaan met één knop om ze naar vandaag te verplaatsen.
+- **Nieuwe taak**: knop **+ DIRECTIVE** rechtsonder.
 - **Backup**: menu **⋯** → exporteer of importeer je taken als JSON-bestand
   (handig om je lijst van telefoon naar PC te verhuizen).
 
