@@ -69,7 +69,6 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
-    cursor: pointer;
     transition: opacity 0.45s;
   }
   .boot.done { opacity: 0; pointer-events: none; }
@@ -127,13 +126,28 @@
     background: var(--amber);
     transition: width 0.25s;
   }
-  .boot-skip {
-    margin-top: 14px;
-    font-size: 9px;
-    letter-spacing: 0.24em;
-    color: var(--text-dim);
+  .boot-wait { color: var(--amber); }
+  .boot-granted { color: var(--green); }
+  .boot-login {
+    margin-top: 20px;
+    background: var(--amber);
+    color: #17110A;
+    border: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
+    padding: 14px 36px;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s, background 0.15s;
   }
+  .boot-login.show { opacity: 1; transform: none; pointer-events: auto; }
+  .boot-login:hover { background: #FFB84D; }
+  .boot-login:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
 
   /* ── header ──────────────────────────────────────────────── */
   header {
@@ -1121,7 +1135,7 @@
   <div class="boot-sub">Home sector · Vacation directive 18.07–26.07</div>
   <div class="boot-log" id="boot-log"></div>
   <div class="boot-bar"><div class="boot-bar-fill" id="boot-bar-fill"></div></div>
-  <div class="boot-skip">Tap to skip</div>
+  <button type="button" class="boot-login" id="boot-login">▸ Agent login</button>
 </div>
 
 <div class="tablet">
