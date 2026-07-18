@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <title>Vakantie Directief · databack-up</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; padding: 24px; display: grid; place-items: center; background: #080b0c; color: #f5a623; }
+    main { width: min(42rem, 100%); }
+    p { color: #d7c6a4; line-height: 1.5; }
+    textarea { width: 100%; min-height: 16rem; padding: 12px; border: 1px solid #72551f; border-radius: 6px; background: #111719; color: #e7dcc7; font: 12px/1.4 ui-monospace, monospace; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+    button { min-height: 48px; padding: 0 18px; border: 0; border-radius: 5px; background: #f5a623; color: #17110a; font-weight: 700; }
+    button.secondary { background: #283338; color: #fff; }
+    button:disabled { opacity: .45; }
+    .ok { color: #75d69c; }
+    .error { color: #ff7f73; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Databack-up</h1>
+    <p id="status">Lokale taken worden gelezen…</p>
+    <div class="actions">
+      <button id="download" type="button" disabled>Back-up downloaden</button>
+      <button id="copy" class="secondary" type="button" disabled>JSON kopiëren</button>
+    </div>
+    <textarea id="output" readonly aria-label="Back-upgegevens"></textarea>
+    <p>Deze pagina leest je gegevens alleen op dit apparaat. Er wordt niets naar een server verstuurd en niets verwijderd.</p>
+  </main>
+  <script>
+    const statusEl = document.getElementById("status");
+    const outputEl = document.getElementById("output");
+    const downloadBtn = document.getElementById("download");
+    const copyBtn = document.getElementById("copy");
+    let backupText = "";
+
+    try {
+      const raw = localStorage.getItem("vd2_tasks");
+      if (!raw) throw new Error("Geen opgeslagen taken gevonden in deze browser.");
+      const tasks = JSON.parse(raw);
+      if (!Array.isArray(tasks)) throw new Error("De opgeslagen taken hebben een onverwacht formaat.");
+      backupText = JSON.stringify({ app: "vacation-directive", version: 3, tasks }, null, 2);
+      outputEl.value = backupText;
+      statusEl.textContent = tasks.length + " taken gevonden. Download de back-up voordat je websitegegevens verwijdert.";
+      statusEl.className = "ok";
+      downloadBtn.disabled = false;
+      copyBtn.disabled = false;
+    } catch (error) {
+      statusEl.textContent = error.message || "De lokale taken konden niet worden gelezen.";
+      statusEl.className = "error";
+    }
+
+    downloadBtn.addEventListener("click", () => {
+      const blob = new Blob([backupText], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "vacation-directive-backup.json";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(backupText);
+        statusEl.textContent = "Back-up gekopieerd naar het klembord.";
+      } catch {
+        outputEl.focus();
+        outputEl.select();
+        statusEl.textContent = "Selecteer en kopieer de tekst handmatig.";
+      }
+    });
+  </script>
+</body>
+</html>
