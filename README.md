@@ -7,6 +7,8 @@ bij het afvinken.
 
 ## Gebruik
 
+- **Inloggen**: iedere keer dat de app opnieuw wordt geopend, wacht de terminal op
+  **Agent login**. Na de klik volgt de authenticatie-animatie en verschijnt het overzicht.
 - **Afvinken**: tik op het vinkvak links van een taak. Is de hele dag af, dan
   verschijnt een **SECTOR SECURED**-stempel over het scherm.
 - **Bewerken / verplaatsen / wissen**: tik op de taak zelf — er opent een paneel
