@@ -1,5 +1,5 @@
 /* Vacation Directive service worker — app-shell cache voor offline gebruik */
-const CACHE = "vd-v11";
+const CACHE = "vd-v12";
 const SHELL = [
   "./",
   "./index.html",

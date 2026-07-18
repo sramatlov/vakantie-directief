@@ -281,7 +281,6 @@
     background: var(--panel);
     scroll-snap-align: start;
   }
-  .col.dragover { border-color: var(--teal); background: #12202A; }
   .col-head {
     display: flex;
     align-items: baseline;
@@ -313,12 +312,10 @@
     gap: 8px;
     padding: 9px 10px;
     border-bottom: 1px solid var(--line);
-    cursor: grab;
+    cursor: default;
     position: relative;
     overflow: hidden;
   }
-  .card:active { cursor: grabbing; }
-  .card.dragging { opacity: 0.4; }
   .card-check {
     flex: 0 0 auto;
     width: 30px;
@@ -412,6 +409,11 @@
   .day-cell.selected .d-abbrev, .day-cell.selected .d-num { color: var(--amber); }
   .day-cell.today .d-abbrev::after { content: " ●"; color: var(--red); }
   .day-cell.complete .d-num { color: var(--green); }
+  .day-cell.drag-target {
+    border-color: var(--teal);
+    background: rgba(47, 180, 194, 0.14);
+    box-shadow: inset 0 0 0 1px var(--teal);
+  }
 
   /* ── overdue banner ──────────────────────────────────────── */
   .rollover {
@@ -606,6 +608,7 @@
   .drag-handle {
     flex: 0 0 auto;
     width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -617,26 +620,103 @@
     font-size: 15px;
     cursor: grab;
     touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
     padding: 0;
   }
   .drag-handle:hover { color: var(--amber); }
   .drag-handle:active { cursor: grabbing; }
   .drag-handle:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
   .card .drag-handle {
-    width: 30px;
-    height: 30px;
+    width: 44px;
+    height: 44px;
     margin: -4px -4px -4px 0;
     border-left: 0;
-    font-size: 13px;
+    font-size: 15px;
   }
-  .task-row.reordering, .card.reordering {
+  .task-row.drag-armed, .card.drag-armed {
     background: #16202C;
     outline: 1px solid var(--teal);
-    opacity: 0.92;
-    position: relative;
-    z-index: 5;
+    outline-offset: -1px;
   }
-
+  .task-row.drag-source, .card.drag-source {
+    display: none;
+  }
+  .drag-placeholder {
+    display: block;
+    min-height: 52px;
+    border: 1px dashed var(--teal);
+    background:
+      repeating-linear-gradient(
+        -45deg,
+        rgba(47, 180, 194, 0.11),
+        rgba(47, 180, 194, 0.11) 7px,
+        rgba(47, 180, 194, 0.04) 7px,
+        rgba(47, 180, 194, 0.04) 14px
+      );
+    box-shadow: inset 0 0 16px rgba(47, 180, 194, 0.08);
+    pointer-events: none;
+  }
+  .drag-ghost {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 200;
+    width: min(310px, calc(100vw - 28px));
+    padding: 11px 13px;
+    border: 1px solid var(--teal);
+    background: #15202B;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.55), 0 0 18px rgba(47,180,194,0.18);
+    color: var(--text);
+    font-family: var(--mono);
+    pointer-events: none;
+    opacity: 0.97;
+    will-change: transform;
+  }
+  .drag-ghost-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .drag-ghost-target {
+    display: block;
+    margin-top: 6px;
+    color: var(--teal);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  body.drag-active {
+    cursor: grabbing;
+    overscroll-behavior: none;
+  }
+  body.drag-active * {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
+  body.drag-active .board,
+  body.drag-active .day-rail {
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+  }
+  body.drag-active .drag-handle {
+    cursor: grabbing;
+  }
+  .drag-status {
+    position: fixed;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .task-row.just-done::before, .card.just-done::before {
     content: "";
     position: absolute;
@@ -773,6 +853,33 @@
     cursor: pointer;
   }
   .toast button:hover { background: rgba(242,163,60,0.12); }
+
+  .storage-alert {
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 120;
+    width: min(560px, calc(100% - 24px));
+    padding: 12px 14px;
+    background: #241316;
+    border: 1px solid var(--red);
+    color: #ffb1b3;
+    box-shadow: 0 10px 32px rgba(0,0,0,0.45);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .storage-alert[hidden] { display: none; }
+  .storage-alert button {
+    float: right;
+    margin-left: 12px;
+    background: none;
+    border: 1px solid currentColor;
+    color: inherit;
+    font: inherit;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
 
   /* ── sector secured overlay ──────────────────────────────── */
   .secured {
@@ -1137,6 +1244,7 @@
   .sync-status.busy { border-color: rgba(47, 180, 194, 0.5); color: var(--teal); }
   .sync-actions { flex-wrap: wrap; }
   .sync-actions .btn-save { min-width: 190px; }
+  .sync-force { border-color: var(--amber); color: var(--amber); }
 
   .cursor { color: var(--teal); animation: blink 1.1s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
@@ -1280,6 +1388,7 @@
   <button class="btn-new" id="btn-new">+ Directive</button>
   <button class="btn-menu" id="btn-menu" aria-label="Menu" aria-expanded="false">⋯</button>
 </div>
+<div class="drag-status" id="drag-status" role="status" aria-live="assertive" aria-atomic="true"></div>
 
 <div class="menu-pop" id="menu-pop">
   <button id="menu-report">▤ Mission report</button>
@@ -1292,6 +1401,11 @@
 <div class="toast" id="toast" role="status">
   <span>Directive deleted</span>
   <button id="btn-undo">Undo</button>
+</div>
+
+<div class="storage-alert" id="storage-alert" role="alert" hidden>
+  <button type="button" id="storage-alert-close" aria-label="Melding sluiten">Sluiten</button>
+  <span id="storage-alert-text"></span>
 </div>
 
 <div class="secured" id="secured">
@@ -1371,8 +1485,9 @@
   </div>
   <div class="sync-status" id="sync-status" role="status">Cloud backup is nog niet verbonden.</div>
   <div class="sheet-actions sync-actions">
-    <button type="button" class="btn-save" id="sync-save">Token opslaan &amp; nu back-uppen</button>
+    <button type="button" class="btn-save" id="sync-save">Token opslaan &amp; verbinden</button>
     <button type="button" class="btn-cancel" id="sync-load">Download van GitHub</button>
+    <button type="button" class="btn-cancel sync-force" id="sync-upload">Lokale taken uploaden</button>
     <button type="button" class="btn-delete" id="sync-disconnect">Verbinding wissen</button>
     <button type="button" class="btn-cancel" id="sync-close">Sluiten</button>
   </div>
@@ -1383,6 +1498,14 @@
    VACATION DIRECTIVE v3 — all tasks live in localStorage.
    The seed list below is only loaded on first launch.
    ══════════════════════════════════════════════════════════════ */
+const bootFailsafe = setTimeout(() => {
+  const bootEl = document.getElementById("boot");
+  if (!bootEl) return;
+  bootEl.classList.add("done");
+  setTimeout(() => bootEl.remove(), 500);
+  showStorageError("De app kon niet volledig opstarten. Herlaad de pagina; je opgeslagen taken zijn niet verwijderd.");
+}, 6000);
+
 const SEED_TASKS = [
   { id: "t1", title: "Huis opruimen",                                   day: "2026-07-18", cat: "huis",    done: false },
   { id: "t2", title: "Bed verschonen",                                  day: "2026-07-18", cat: "huis",    done: false },
@@ -1434,6 +1557,7 @@ let tasks = (() => {
   } catch {}
   return SEED_TASKS.map(t => ({ ...t }));
 })();
+let lastPersistedTasks = cloneTasks(tasks);
 saveTasks({ sync: false, touch: false, snapshot: false });
 
 let selectedDay = inWindow(todayStr()) ? todayStr() : DAYS[0].date;
@@ -1449,32 +1573,81 @@ let syncInFlight = false;
 let syncPending = false;
 
 function sanitizeTasks(list) {
+  const seenIds = new Set();
   return list
     .filter(t => t && typeof t.title === "string")
-    .map(t => ({
-      id: t.id || newId(),
-      title: t.title,
-      day: t.day || null,
-      cat: CAT_LABEL[t.cat] ? t.cat : "huis",
-      done: !!t.done
-    }));
+    .map(t => {
+      let id = typeof t.id === "string" ? t.id.trim() : "";
+      while (!id || seenIds.has(id)) id = newId();
+      seenIds.add(id);
+      return {
+        id,
+        title: t.title,
+        day: DAYS.some(d => d.date === t.day) ? t.day : null,
+        cat: CAT_LABEL[t.cat] ? t.cat : "huis",
+        done: !!t.done
+      };
+    });
+}
+
+function cloneTasks(list) {
+  return list.map(t => ({ ...t }));
+}
+
+function showStorageError(message) {
+  const box = document.getElementById("storage-alert");
+  const text = document.getElementById("storage-alert-text");
+  if (!box || !text) return;
+  text.textContent = message;
+  box.hidden = false;
 }
 
 function saveTasks({ sync = true, touch = true, snapshot = true } = {}) {
+  let previous = null;
+  let previousUpdated = null;
+  let previousRead = false;
+  let snapshotFailed = false;
   try {
     const next = JSON.stringify(tasks);
-    const previous = localStorage.getItem(LS_TASKS);
+    previous = localStorage.getItem(LS_TASKS);
+    previousUpdated = localStorage.getItem(LS_TASKS_UPDATED);
+    previousRead = true;
     if (snapshot && previous && previous !== next) {
-      let snapshots = [];
-      try { snapshots = JSON.parse(localStorage.getItem(LS_TASK_SNAPSHOTS)) || []; } catch {}
-      snapshots.push({ at: new Date().toISOString(), tasks: JSON.parse(previous) });
-      localStorage.setItem(LS_TASK_SNAPSHOTS, JSON.stringify(snapshots.slice(-12)));
+      try {
+        let snapshots = [];
+        try { snapshots = JSON.parse(localStorage.getItem(LS_TASK_SNAPSHOTS)) || []; } catch {}
+        snapshots.push({ at: new Date().toISOString(), tasks: JSON.parse(previous) });
+        localStorage.setItem(LS_TASK_SNAPSHOTS, JSON.stringify(snapshots.slice(-12)));
+      } catch {
+        snapshotFailed = true;
+      }
     }
     localStorage.setItem(LS_TASKS, next);
     if (touch) localStorage.setItem(LS_TASKS_UPDATED, String(Date.now()));
-  } catch {}
+    lastPersistedTasks = cloneTasks(tasks);
+  } catch {
+    tasks = cloneTasks(lastPersistedTasks);
+    if (previousRead) {
+      try {
+        if (previous === null) localStorage.removeItem(LS_TASKS);
+        else localStorage.setItem(LS_TASKS, previous);
+        if (previousUpdated === null) localStorage.removeItem(LS_TASKS_UPDATED);
+        else localStorage.setItem(LS_TASKS_UPDATED, previousUpdated);
+      } catch {}
+    }
+    showStorageError("Opslaan op dit apparaat is mislukt. De wijziging is teruggedraaid; controleer de vrije opslagruimte en probeer opnieuw.");
+    return false;
+  }
+  if (snapshotFailed) {
+    showStorageError("De taak is opgeslagen, maar het lokale herstelpunt kon niet worden bijgewerkt.");
+  }
   if (sync) scheduleGitHubSync();
+  return true;
 }
+
+document.getElementById("storage-alert-close").addEventListener("click", () => {
+  document.getElementById("storage-alert").hidden = true;
+});
 function tasksFor(day) { return tasks.filter(t => t.day === day); }
 function backlog() { return tasks.filter(t => !t.day); }
 function overdue() {
@@ -1487,6 +1660,11 @@ function dayComplete(day) {
   return list.length > 0 && list.every(t => t.done);
 }
 function newId() { return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function uniqueTaskId() {
+  let id = newId();
+  while (tasks.some(t => t.id === id)) id = newId();
+  return id;
+}
 
 /* ── audio ── */
 let audioCtx = null;
@@ -1553,7 +1731,7 @@ function moveTaskToDay(t, day) {
 
 function moveTask(t, day) {
   moveTaskToDay(t, day);
-  saveTasks();
+  if (!saveTasks()) { renderAll(); return; }
   if (day) selectedDay = day;
   blip(true);
   renderAll();
@@ -1571,84 +1749,343 @@ function commitOrder(ul, movedTask) {
   const ordered = new Map(ids.map(id => [id, tasks.find(t => t.id === id)]));
   let k = 0;
   tasks = tasks.map(t => t.day === day && k < ids.length ? ordered.get(ids[k++]) : t);
-  saveTasks();
+  if (!saveTasks()) { renderAll(); return; }
   if (day) selectedDay = day;
   blip(true);
   renderAll();
 }
 
-function targetListAt(x, y) {
-  const target = document.elementFromPoint(x, y);
-  if (!target) return null;
-  const direct = target.closest("ul[data-day]");
-  if (direct) return direct;
-  const column = target.closest(".col");
-  return column ? column.querySelector("ul[data-day]") : null;
+const DRAG_EDGE = 72;
+const DRAG_MAX_SCROLL = 20;
+let activeDrag = null;
+
+function dragDayLabel(day) {
+  if (!day) return "UNASSIGNED";
+  const d = DAYS.find(x => x.date === day);
+  return d ? d.abbrev + " " + d.date.slice(8) : day;
+}
+
+function announceDrag(message) {
+  const status = document.getElementById("drag-status");
+  if (status) status.textContent = message;
+}
+
+function dropTargetAt(x, y) {
+  const toolbar = document.querySelector(".toolbar");
+  const toolbarTop = toolbar ? toolbar.getBoundingClientRect().top : window.innerHeight;
+  const probeY = Math.min(y, toolbarTop - 5);
+  const hit = document.elementFromPoint(x, Math.max(1, probeY));
+  if (!hit) return null;
+
+  const dayCell = hit.closest(".day-cell[data-day]");
+  if (dayCell) return { kind: "day", day: dayCell.dataset.day, element: dayCell };
+
+  let list = hit.closest("ul[data-day]");
+  if (!list) {
+    const column = hit.closest(".col");
+    if (column) list = column.querySelector("ul[data-day]");
+  }
+  if (!list) {
+    const panel = hit.closest(".panel.list-ui");
+    if (panel) list = panel.querySelector("ul[data-day]");
+  }
+  if (!list) {
+    const board = hit.closest(".board");
+    if (board) {
+      const nearest = Array.from(board.querySelectorAll(".col")).reduce((best, col) => {
+        const r = col.getBoundingClientRect();
+        const distance = x < r.left ? r.left - x : x > r.right ? x - r.right : 0;
+        return !best || distance < best.distance ? { col, distance } : best;
+      }, null);
+      if (nearest) list = nearest.col.querySelector("ul[data-day]");
+    }
+  }
+  return list ? { kind: "list", day: listDay(list), list, element: list } : null;
+}
+
+function clearDragTarget(state) {
+  if (state.candidate && state.candidate.element) {
+    state.candidate.element.classList.remove("drag-target");
+  }
+  state.candidate = null;
+}
+
+function restorePlaceholderToSource(state) {
+  if (state.placeholder && state.li.parentElement === state.sourceList) {
+    state.sourceList.insertBefore(state.placeholder, state.li);
+  }
+}
+
+function placeDragPlaceholder(state, list, pointerY) {
+  const siblings = Array.from(list.querySelectorAll(":scope > [data-id]"))
+    .filter(item => item !== state.li);
+  const before = siblings.find(item => {
+    const r = item.getBoundingClientRect();
+    return pointerY < r.top + r.height / 2;
+  });
+  list.insertBefore(state.placeholder, before || null);
+}
+
+function dragPositionLabel(state, target) {
+  if (!target) return "RELEASE OUTSIDE TO CANCEL";
+  if (target.kind === "day") return "MOVE TO " + dragDayLabel(target.day) + " · END OF LIST";
+  const items = Array.from(target.list.children)
+    .filter(item => item === state.placeholder || (item.dataset && item.dataset.id && item !== state.li));
+  const position = Math.max(1, items.indexOf(state.placeholder) + 1);
+  return "MOVE TO " + dragDayLabel(target.day) + " · POSITION " + position;
+}
+
+function positionDragGhost(state) {
+  if (!state.ghost) return;
+  const r = state.ghost.getBoundingClientRect();
+  const left = Math.min(window.innerWidth - r.width - 10, Math.max(10, state.x + 16));
+  const top = Math.min(window.innerHeight - r.height - 10, Math.max(10, state.y + 16));
+  state.ghost.style.transform = "translate3d(" + left + "px," + top + "px,0)";
+}
+
+function updateDragTarget(state) {
+  const next = dropTargetAt(state.x, state.y);
+  if (state.candidate && (!next || next.element !== state.candidate.element)) {
+    state.candidate.element.classList.remove("drag-target");
+  }
+  state.candidate = next;
+  if (next) {
+    next.element.classList.add("drag-target");
+    if (next.kind === "list") placeDragPlaceholder(state, next.list, state.y);
+    else restorePlaceholderToSource(state);
+  } else {
+    restorePlaceholderToSource(state);
+  }
+  if (state.ghostTarget) state.ghostTarget.textContent = dragPositionLabel(state, next);
+}
+
+function edgeSpeed(position, start, end) {
+  if (position < start + DRAG_EDGE) {
+    return -Math.ceil(DRAG_MAX_SCROLL * (1 - Math.max(0, position - start) / DRAG_EDGE));
+  }
+  if (position > end - DRAG_EDGE) {
+    return Math.ceil(DRAG_MAX_SCROLL * (1 - Math.max(0, end - position) / DRAG_EDGE));
+  }
+  return 0;
+}
+
+function dragAutoScrollFrame() {
+  const state = activeDrag;
+  if (!state || !state.started) return;
+  let scrolled = false;
+  const toolbar = document.querySelector(".toolbar");
+  const viewportBottom = toolbar ? toolbar.getBoundingClientRect().top - 4 : window.innerHeight;
+  const vertical = edgeSpeed(state.y, 0, viewportBottom);
+  if (vertical && document.documentElement.scrollHeight > window.innerHeight) {
+    const before = window.scrollY;
+    window.scrollBy(0, vertical);
+    scrolled = scrolled || window.scrollY !== before;
+  }
+
+  const horizontalScroller = view === "board" ? document.getElementById("board") : document.getElementById("day-rail");
+  if (horizontalScroller) {
+    const r = horizontalScroller.getBoundingClientRect();
+    const nearScroller = state.y >= r.top - 20 && state.y <= r.bottom + 20;
+    if (nearScroller && horizontalScroller.scrollWidth > horizontalScroller.clientWidth) {
+      const horizontal = edgeSpeed(state.x, r.left, r.right);
+      if (horizontal) {
+        const before = horizontalScroller.scrollLeft;
+        horizontalScroller.scrollLeft += horizontal;
+        scrolled = scrolled || horizontalScroller.scrollLeft !== before;
+      }
+    }
+  }
+
+  if (scrolled) updateDragTarget(state);
+  state.raf = requestAnimationFrame(dragAutoScrollFrame);
+}
+
+function startActiveDrag(state) {
+  state.started = true;
+  state.li.classList.remove("drag-armed");
+  state.li.classList.add("drag-source");
+  document.body.classList.add("drag-active");
+
+  const placeholder = el("li", "drag-placeholder");
+  placeholder.setAttribute("aria-hidden", "true");
+  placeholder.style.height = Math.max(52, state.liRect.height) + "px";
+  state.placeholder = placeholder;
+  state.sourceList.insertBefore(placeholder, state.li);
+
+  const ghost = el("div", "drag-ghost");
+  ghost.setAttribute("aria-hidden", "true");
+  ghost.appendChild(el("span", "drag-ghost-title", state.task.title));
+  state.ghostTarget = el("span", "drag-ghost-target", "MOVING");
+  ghost.appendChild(state.ghostTarget);
+  document.body.appendChild(ghost);
+  state.ghost = ghost;
+
+  if (navigator.vibrate && state.pointerType === "touch") navigator.vibrate(18);
+  announceDrag("Moving " + state.task.title + ". Drag to a list, column or day.");
+  positionDragGhost(state);
+  updateDragTarget(state);
+  state.raf = requestAnimationFrame(dragAutoScrollFrame);
+}
+
+function cleanupActiveDrag(state) {
+  state.finishing = true;
+  if (state.raf) cancelAnimationFrame(state.raf);
+  clearDragTarget(state);
+  if (state.placeholder) state.placeholder.remove();
+  if (state.ghost) state.ghost.remove();
+  state.li.classList.remove("drag-armed", "drag-source");
+  state.handle.classList.remove("drag-armed");
+  document.body.classList.remove("drag-active");
+  try {
+    if (state.handle.hasPointerCapture(state.pointerId)) state.handle.releasePointerCapture(state.pointerId);
+  } catch {}
+}
+
+function finishActiveDrag(cancelled = false) {
+  const state = activeDrag;
+  if (!state || state.finishing) return;
+  state.finishing = true;
+
+  if (!state.started) {
+    cleanupActiveDrag(state);
+    activeDrag = null;
+    if (!cancelled) openSheet(state.task.id);
+    return;
+  }
+
+  const target = cancelled ? null : state.candidate;
+  if (!target) {
+    cleanupActiveDrag(state);
+    activeDrag = null;
+    announceDrag("Move cancelled. " + state.task.title + " stayed in its original position.");
+    return;
+  }
+
+  if (target.kind === "day") {
+    const changed = state.task.day !== target.day;
+    cleanupActiveDrag(state);
+    activeDrag = null;
+    if (!changed) {
+      announceDrag("Position unchanged for " + state.task.title + ".");
+      return;
+    }
+    moveTaskToDay(state.task, target.day);
+    if (!saveTasks()) { renderAll(); return; }
+    selectedDay = target.day;
+    blip(true);
+    renderAll();
+    announceDrag(state.task.title + " moved to " + dragDayLabel(target.day) + ".");
+    return;
+  }
+
+  target.list.insertBefore(state.li, state.placeholder);
+  const nextOrder = Array.from(target.list.querySelectorAll(":scope > [data-id]")).map(item => item.dataset.id);
+  const sameList = target.list === state.sourceList;
+  const changed = !sameList || nextOrder.join("|") !== state.sourceOrder.join("|");
+  cleanupActiveDrag(state);
+  activeDrag = null;
+  if (!changed) {
+    announceDrag("Position unchanged for " + state.task.title + ".");
+    return;
+  }
+  commitOrder(target.list, state.task);
+  announceDrag(state.task.title + " moved to " + dragDayLabel(target.day) + ".");
+}
+
+function beginTaskPointer(e, handle, li, task) {
+  if (activeDrag || e.isPrimary === false) return;
+  if (e.button !== undefined && e.button !== 0) return;
+  e.preventDefault();
+  const sourceList = li.parentElement;
+  activeDrag = {
+    pointerId: e.pointerId,
+    pointerType: e.pointerType || "mouse",
+    handle,
+    li,
+    task,
+    sourceList,
+    sourceOrder: Array.from(sourceList.querySelectorAll(":scope > [data-id]")).map(item => item.dataset.id),
+    liRect: li.getBoundingClientRect(),
+    startX: e.clientX,
+    startY: e.clientY,
+    x: e.clientX,
+    y: e.clientY,
+    started: false,
+    finishing: false,
+    candidate: null,
+    raf: 0
+  };
+  li.classList.add("drag-armed");
+  handle.classList.add("drag-armed");
+  try { handle.setPointerCapture(e.pointerId); } catch {}
 }
 
 function attachReorder(handle, li, task) {
   handle.addEventListener("dragstart", (e) => e.preventDefault());
-  handle.addEventListener("pointerdown", (e) => {
-    if (e.button !== undefined && e.button !== 0) return;
-    e.preventDefault();
-    const sourceList = li.parentElement;
-    let activeList = sourceList;
-    let dragging = false;
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const wasDraggable = li.draggable;
-    li.draggable = false;
-    handle.setPointerCapture(e.pointerId);
-
-    const move = (ev) => {
-      if (!dragging && Math.hypot(ev.clientX - startX, ev.clientY - startY) < 7) return;
-      if (!dragging) {
-        dragging = true;
-        li.classList.add("reordering");
-      }
-      const nextList = targetListAt(ev.clientX, ev.clientY) || activeList;
-      if (nextList !== activeList) {
-        activeList.classList.remove("drag-target");
-        activeList = nextList;
-      }
-      activeList.classList.add("drag-target");
-      const siblings = Array.from(activeList.querySelectorAll("[data-id]")).filter(x => x !== li);
-      let placed = false;
-      for (const sib of siblings) {
-        const r = sib.getBoundingClientRect();
-        if (ev.clientY < r.top + r.height / 2) { activeList.insertBefore(li, sib); placed = true; break; }
-      }
-      if (!placed) activeList.appendChild(li);
-    };
-    const up = () => {
-      try { handle.releasePointerCapture(e.pointerId); } catch {}
-      handle.removeEventListener("pointermove", move);
-      handle.removeEventListener("pointerup", up);
-      handle.removeEventListener("pointercancel", up);
-      li.classList.remove("reordering");
-      activeList.classList.remove("drag-target");
-      li.draggable = wasDraggable;
-      if (dragging) commitOrder(activeList, task);
-      else openSheet(task.id);
-    };
-    handle.addEventListener("pointermove", move);
-    handle.addEventListener("pointerup", up);
-    handle.addEventListener("pointercancel", up);
+  handle.addEventListener("contextmenu", (e) => e.preventDefault());
+  handle.addEventListener("pointerdown", (e) => beginTaskPointer(e, handle, li, task));
+  handle.addEventListener("lostpointercapture", () => {
+    if (activeDrag && activeDrag.handle === handle && !activeDrag.finishing) finishActiveDrag(true);
   });
 }
+
+document.addEventListener("pointermove", (e) => {
+  const state = activeDrag;
+  if (!state || e.pointerId !== state.pointerId) return;
+  state.x = e.clientX;
+  state.y = e.clientY;
+  const threshold = state.pointerType === "touch" ? 10 : state.pointerType === "pen" ? 8 : 6;
+  if (!state.started && Math.hypot(state.x - state.startX, state.y - state.startY) < threshold) return;
+  if (!state.started) startActiveDrag(state);
+  e.preventDefault();
+  positionDragGhost(state);
+  updateDragTarget(state);
+}, { capture: true, passive: false });
+
+document.addEventListener("pointerup", (e) => {
+  if (!activeDrag || e.pointerId !== activeDrag.pointerId) return;
+  e.preventDefault();
+  finishActiveDrag(false);
+}, { capture: true, passive: false });
+
+document.addEventListener("pointercancel", (e) => {
+  if (!activeDrag || e.pointerId !== activeDrag.pointerId) return;
+  finishActiveDrag(true);
+}, true);
+
+window.addEventListener("blur", () => finishActiveDrag(true));
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) finishActiveDrag(true);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || !activeDrag) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  finishActiveDrag(true);
+}, true);
 
 function dragHandle(li, t) {
   const handle = el("button", "drag-handle", "↕");
   handle.type = "button";
   handle.setAttribute("aria-label", "Move or reorder: " + t.title);
+  handle.title = "Drag to move · tap for move controls";
   attachReorder(handle, li, t);
+  handle.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openSheet(t.id);
+    }
+  });
+  handle.addEventListener("click", (e) => {
+    if (e.detail === 0) openSheet(t.id);
+  });
   return handle;
 }
 
 function toggleDone(t) {
   const wasComplete = t.day ? dayComplete(t.day) : false;
   t.done = !t.done;
-  saveTasks();
+  if (!saveTasks()) { renderAll(); return; }
   if (t.done) {
     flashId = t.id;
     if (navigator.vibrate) navigator.vibrate(30);
@@ -1843,8 +2280,8 @@ function quickAddRow(day) {
     e.preventDefault();
     const title = input.value.trim();
     if (!title) return;
-    tasks.push({ id: newId(), title, day, cat: "huis", done: false });
-    saveTasks();
+    tasks.push({ id: uniqueTaskId(), title, day, cat: "huis", done: false });
+    if (!saveTasks()) { renderAll(); return; }
     focusQuickAdd = wrap.dataset.day;
     blip(true);
     renderAll();
@@ -1857,13 +2294,6 @@ function renderCard(t, ul) {
   const li = el("li", "card" + (t.done ? " done" : ""));
   li.dataset.id = t.id;
   if (flashId === t.id && t.done) li.classList.add("just-done");
-  li.draggable = true;
-  li.addEventListener("dragstart", (e) => {
-    e.dataTransfer.setData("text/plain", t.id);
-    e.dataTransfer.effectAllowed = "move";
-    li.classList.add("dragging");
-  });
-  li.addEventListener("dragend", () => li.classList.remove("dragging"));
 
   const check = el("button", "card-check");
   check.type = "button";
@@ -1926,28 +2356,6 @@ function renderBoard() {
     col.appendChild(ul);
     col.appendChild(quickAddRow(c.date));
 
-    col.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      col.classList.add("dragover");
-    });
-    col.addEventListener("dragleave", (e) => {
-      if (!col.contains(e.relatedTarget)) col.classList.remove("dragover");
-    });
-    col.addEventListener("drop", (e) => {
-      e.preventDefault();
-      col.classList.remove("dragover");
-      const id = e.dataTransfer.getData("text/plain");
-      const t = tasks.find(x => x.id === id);
-      if (t && t.day !== c.date) {
-        moveTaskToDay(t, c.date);
-        saveTasks();
-        if (c.date) selectedDay = c.date;
-        blip(true);
-        renderAll();
-      }
-    });
-
     board.appendChild(col);
   });
 }
@@ -1965,7 +2373,7 @@ function renderRollover() {
   btn.addEventListener("click", () => {
     const today = todayStr();
     late.forEach(t => { t.day = today; });
-    saveTasks();
+    if (!saveTasks()) { renderAll(); return; }
     selectedDay = today;
     blip(true);
     renderAll();
@@ -2017,6 +2425,7 @@ function renderRail() {
     const done = dayTasks.filter(t => t.done).length;
     const cell = el("button", "day-cell");
     cell.type = "button";
+    cell.dataset.day = d.date;
     cell.setAttribute("role", "tab");
     cell.setAttribute("aria-selected", d.date === selectedDay ? "true" : "false");
     if (d.date === selectedDay) cell.classList.add("selected");
@@ -2083,8 +2492,13 @@ function setView(v) {
   document.getElementById("view-board").classList.toggle("active", v === "board");
   document.getElementById("rail-label").textContent = v === "board" ? "Operations board" : "Operational days";
   if (v === "board") {
-    const todayCol = document.querySelector(".col.today-col");
-    if (todayCol) todayCol.scrollIntoView({ inline: "center", block: "nearest" });
+    requestAnimationFrame(() => {
+      const board = document.getElementById("board");
+      const todayCol = board.querySelector(".col.today-col");
+      if (!todayCol) return;
+      const left = todayCol.offsetLeft - (board.clientWidth - todayCol.offsetWidth) / 2;
+      board.scrollLeft = Math.max(0, left);
+    });
   }
 }
 document.getElementById("view-list").addEventListener("click", () => setView("list"));
@@ -2118,13 +2532,13 @@ function localUpdatedAt() {
 function setSyncStatus(kind, message) {
   syncStatus.className = "sync-status" + (kind ? " " + kind : "");
   syncStatus.textContent = message;
-  const label = kind === "ok" ? "OK" : kind === "busy" ? "SYNC" : kind === "error" ? "ERROR" : "OFF";
+  const label = kind === "ok" ? "OK" : kind === "connected" ? "ON" : kind === "busy" ? "SYNC" : kind === "error" ? "ERROR" : "OFF";
   syncMenuButton.textContent = "☁ GitHub sync · " + label;
 }
 
 function openSyncSheet() {
   syncTokenInput.value = getGitHubToken();
-  if (getGitHubToken()) setSyncStatus("", "Verbonden. Lokale wijzigingen worden automatisch geback-upt.");
+  if (getGitHubToken()) setSyncStatus("connected", "Verbonden. Lokale wijzigingen worden automatisch geback-upt.");
   else setSyncStatus("", "Cloud backup is nog niet verbonden.");
   syncSheet.classList.add("open");
   backdrop.classList.add("open");
@@ -2168,7 +2582,9 @@ async function githubRequest(method = "GET", body = null) {
   try { data = await response.json(); } catch {}
   if (!response.ok) {
     const detail = data && data.message ? data.message : "GitHub antwoordde met status " + response.status;
-    throw new Error(detail);
+    const error = new Error(detail);
+    error.status = response.status;
+    throw error;
   }
   return data;
 }
@@ -2194,8 +2610,31 @@ function makeSyncPayload() {
     app: "vacation-directive",
     version: 4,
     updatedAt: new Date(updated).toISOString(),
-    tasks
+    tasks: cloneTasks(tasks)
   };
+}
+
+function taskListsEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+async function connectGitHubSafely() {
+  setSyncStatus("busy", "Bestaande GitHub-back-up wordt gecontroleerd…");
+  try {
+    const file = await githubRequest();
+    const remote = parseRemoteFile(file);
+    if (!remote) {
+      await pushTasksToGitHub({ force: true });
+      return;
+    }
+    if (taskListsEqual(remote.tasks, tasks)) {
+      setSyncStatus("ok", "Verbonden: lokale taken en GitHub zijn gelijk.");
+      return;
+    }
+    setSyncStatus("error", "GitHub bevat al een andere back-up met " + remote.tasks.length + " taken. Kies Download van GitHub of Lokale taken uploaden; er wordt niets automatisch overschreven.");
+  } catch (error) {
+    setSyncStatus("error", "Verbinden mislukt: " + error.message);
+  }
 }
 
 async function putGitHubFile(file, payload) {
@@ -2222,8 +2661,12 @@ async function pushTasksToGitHub({ force = false } = {}) {
     try {
       await putGitHubFile(file, payload);
     } catch (error) {
-      if (!/409|sha|conflict/i.test(error.message)) throw error;
+      if (error.status !== 409 && !/sha|conflict/i.test(error.message)) throw error;
       file = await githubRequest();
+      const latest = parseRemoteFile(file);
+      if (latest && !taskListsEqual(latest.tasks, payload.tasks)) {
+        throw new Error("GitHub is intussen gewijzigd door een ander apparaat. Download die versie eerst; er is niets overschreven.");
+      }
       await putGitHubFile(file, payload);
     }
     setSyncStatus("ok", "Back-up voltooid om " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + ".");
@@ -2256,12 +2699,20 @@ async function loadTasksFromGitHub({ automatic = false } = {}) {
     const remote = parseRemoteFile(file);
     if (!remote) throw new Error("tasks.json bestaat nog niet.");
     if (!automatic && !confirm("Download " + remote.tasks.length + " taken van GitHub? Je huidige lokale versie wordt als herstelpunt bewaard.")) {
-      setSyncStatus("", "Download geannuleerd; lokale taken zijn niet gewijzigd.");
+      setSyncStatus("connected", "Download geannuleerd; lokale taken zijn niet gewijzigd.");
       return;
     }
     tasks = remote.tasks;
-    saveTasks({ sync: false, touch: false });
-    try { localStorage.setItem(LS_TASKS_UPDATED, String(remote.updatedAt || Date.now())); } catch {}
+    if (!saveTasks({ sync: false, touch: false })) {
+      setSyncStatus("error", "Download ontvangen, maar lokaal opslaan is mislukt. Je vorige taken zijn hersteld.");
+      renderAll();
+      return;
+    }
+    try {
+      localStorage.setItem(LS_TASKS_UPDATED, String(remote.updatedAt || Date.now()));
+    } catch {
+      showStorageError("De GitHub-taken zijn opgeslagen, maar het synchronisatietijdstip kon niet worden bewaard.");
+    }
     renderAll();
     setSyncStatus("ok", remote.tasks.length + " taken van GitHub geladen.");
   } catch (error) {
@@ -2276,15 +2727,10 @@ async function reconcileGitHubOnStart() {
     const file = await githubRequest();
     const remote = parseRemoteFile(file);
     if (!remote) { await pushTasksToGitHub({ force: true }); return; }
-    const localTime = localUpdatedAt();
-    if (remote.updatedAt > localTime) {
-      await loadTasksFromGitHub({ automatic: true });
-    } else if (localTime > remote.updatedAt) {
-      await pushTasksToGitHub();
-    } else if (JSON.stringify(remote.tasks) === JSON.stringify(tasks)) {
+    if (taskListsEqual(remote.tasks, tasks)) {
       setSyncStatus("ok", "Lokale taken en GitHub zijn gelijk.");
     } else {
-      setSyncStatus("error", "Lokaal en GitHub verschillen. Kies handmatig uploaden of downloaden.");
+      setSyncStatus("error", "Lokaal en GitHub verschillen. Kies Download van GitHub of Lokale taken uploaden; er wordt niets automatisch overschreven.");
     }
   } catch (error) {
     setSyncStatus("error", "Controle mislukt: " + error.message);
@@ -2329,7 +2775,7 @@ function shiftEditingDay(delta) {
   const target = DAYS[index + delta];
   if (!target) return;
   moveTaskToDay(t, target.date);
-  saveTasks();
+  if (!saveTasks()) { renderAll(); updateOrderControls(); return; }
   selectedDay = target.date;
   daySelect.value = target.date;
   blip(true);
@@ -2346,7 +2792,7 @@ function shiftEditingTask(delta) {
   if (!swapWith) return;
   const a = tasks.indexOf(t), b = tasks.indexOf(swapWith);
   [tasks[a], tasks[b]] = [tasks[b], tasks[a]];
-  saveTasks();
+  if (!saveTasks()) { renderAll(); updateOrderControls(); return; }
   renderAll();
   updateOrderControls();
 }
@@ -2392,9 +2838,9 @@ sheet.addEventListener("submit", (e) => {
       moveTaskToDay(t, day);
     }
   } else {
-    tasks.push({ id: newId(), title, day, cat, done: false });
+    tasks.push({ id: uniqueTaskId(), title, day, cat, done: false });
   }
-  saveTasks();
+  if (!saveTasks()) { renderAll(); updateOrderControls(); return; }
   if (day) selectedDay = day;
   closeSheet();
   renderAll();
@@ -2417,7 +2863,7 @@ document.getElementById("btn-delete").addEventListener("click", () => {
   if (idx === -1) { closeSheet(); return; }
   pendingDelete = { task: tasks[idx], index: idx };
   tasks.splice(idx, 1);
-  saveTasks();
+  if (!saveTasks()) { pendingDelete = null; renderAll(); return; }
   closeSheet();
   renderAll();
   showToast();
@@ -2425,9 +2871,10 @@ document.getElementById("btn-delete").addEventListener("click", () => {
 
 document.getElementById("btn-undo").addEventListener("click", () => {
   if (pendingDelete) {
-    tasks.splice(Math.min(pendingDelete.index, tasks.length), 0, pendingDelete.task);
+    const restoring = pendingDelete;
+    tasks.splice(Math.min(restoring.index, tasks.length), 0, restoring.task);
+    if (!saveTasks()) { renderAll(); return; }
     pendingDelete = null;
-    saveTasks();
     renderAll();
   }
   clearTimeout(toastTimer);
@@ -2478,14 +2925,31 @@ document.getElementById("menu-sync").addEventListener("click", () => {
 document.getElementById("sync-save").addEventListener("click", async () => {
   const token = syncTokenInput.value.trim();
   if (!token) { setSyncStatus("error", "Plak eerst een GitHub-token."); return; }
-  try { localStorage.setItem(LS_GITHUB_TOKEN, token); } catch {}
-  await pushTasksToGitHub({ force: true });
+  try {
+    localStorage.setItem(LS_GITHUB_TOKEN, token);
+  } catch {
+    showStorageError("Het GitHub-token kon niet op dit apparaat worden opgeslagen.");
+    setSyncStatus("error", "Token opslaan is mislukt.");
+    return;
+  }
+  await connectGitHubSafely();
 });
 
 document.getElementById("sync-load").addEventListener("click", () => loadTasksFromGitHub());
+document.getElementById("sync-upload").addEventListener("click", async () => {
+  if (!getGitHubToken()) { setSyncStatus("error", "Sla eerst een GitHub-token op."); return; }
+  if (!confirm("Lokale taken naar GitHub uploaden? Een bestaande GitHub-back-up wordt hiermee overschreven.")) return;
+  await pushTasksToGitHub({ force: true });
+});
 document.getElementById("sync-close").addEventListener("click", closeSyncSheet);
 document.getElementById("sync-disconnect").addEventListener("click", () => {
-  try { localStorage.removeItem(LS_GITHUB_TOKEN); } catch {}
+  try {
+    localStorage.removeItem(LS_GITHUB_TOKEN);
+  } catch {
+    showStorageError("De GitHub-verbinding kon niet van dit apparaat worden verwijderd.");
+    setSyncStatus("error", "Verbinding wissen is mislukt.");
+    return;
+  }
   syncTokenInput.value = "";
   clearTimeout(syncTimer);
   setSyncStatus("", "GitHub-verbinding verwijderd. Je lokale taken blijven bewaard.");
@@ -2521,14 +2985,8 @@ document.getElementById("import-file").addEventListener("change", (e) => {
       const valid = imported.filter(t => t && typeof t.title === "string");
       if (!valid.length) throw new Error("empty list");
       if (confirm("Import " + valid.length + " tasks? This replaces your current list.")) {
-        tasks = valid.map(t => ({
-          id: t.id || newId(),
-          title: t.title,
-          day: t.day || null,
-          cat: CAT_LABEL[t.cat] ? t.cat : "huis",
-          done: !!t.done
-        }));
-        saveTasks();
+        tasks = sanitizeTasks(valid);
+        if (!saveTasks()) { renderAll(); e.target.value = ""; return; }
         renderAll();
       }
     } catch {
@@ -2560,7 +3018,7 @@ window.addEventListener("online", () => scheduleGitHubSync(300));
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let seen = false;
   try { seen = sessionStorage.getItem("vd_booted") === "1"; } catch {}
-  if (seen || reduced) { bootEl.remove(); return; }
+  if (seen || reduced) { clearTimeout(bootFailsafe); bootEl.remove(); return; }
 
   const doneCount = tasks.filter(t => t.done).length;
   const d = DAYS.find(x => x.date === todayStr());
@@ -2574,13 +3032,13 @@ window.addEventListener("online", () => scheduleGitHubSync(300));
   ];
   const log = document.getElementById("boot-log");
   const barFill = document.getElementById("boot-bar-fill");
-  let i = 0, timer = null, watchdog = null, finished = false;
+  let i = 0, timer = null, finished = false;
 
   function finish() {
     if (finished) return;
     finished = true;
     clearTimeout(timer);
-    clearTimeout(watchdog);
+    clearTimeout(bootFailsafe);
     try { sessionStorage.setItem("vd_booted", "1"); } catch {}
     bootEl.classList.add("done");
     setTimeout(() => bootEl.remove(), 500);
@@ -2601,7 +3059,6 @@ window.addEventListener("online", () => scheduleGitHubSync(300));
     timer = setTimeout(step, 270);
   }
   loginBtn.addEventListener("click", finish);
-  watchdog = setTimeout(finish, 6000);
   timer = setTimeout(step, 300);
 })();
 </script>

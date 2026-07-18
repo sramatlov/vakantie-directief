@@ -14,11 +14,11 @@ bij het afvinken.
   op **Undo** tikken.
 - **Snel inplannen**: ongeplande taken hebben knopjes **▸ Today** / **▸ Tmrw**.
 - **Weergaven**: schakel tussen **List** (één dag + backlog) en **Board** (alle dagen
-  als kolommen naast elkaar, Trello-stijl). Op het bord kun je taken tussen dagen
-  **slepen** (desktop).
-- **Verplaatsen en volgorde**: tik op het ↕-handvat om een andere dag te kiezen of
-  gebruik **Earlier / Later**. Je kunt het handvat ook binnen of tussen zichtbare
-  lijsten en bordkolommen slepen; dezelfde pointerbesturing werkt op touch en desktop.
+  als kolommen naast elkaar, Trello-stijl).
+- **Verplaatsen en volgorde**: sleep het ↕-handvat binnen een lijst, naar een andere
+  lijst of bordkolom, of naar een dagtab. De pagina en het bord scrollen automatisch
+  bij de randen. Loslaten buiten een doel of een onderbroken aanraking annuleert de
+  verplaatsing. Tik op het handvat voor de dagkeuze en **Earlier / Later**-knoppen.
 - **Snel toevoegen**: onderaan elke lijst of kolom zit een invoerveldje — typen,
   Enter, klaar.
 - **Fleet Hangar**: elke voltooide taak wordt een schip in de hangar bovenaan,
@@ -31,7 +31,10 @@ bij het afvinken.
 - **Backup**: menu **⋯** → exporteer of importeer je taken als JSON-bestand.
 - **GitHub cloud backup**: menu **⋯** → *GitHub sync*. Voer een fine-grained token
   in met `Contents: read/write`, uitsluitend voor `sramatlov/vakantie-directief-data`.
-  Daarna worden lokale wijzigingen automatisch naar `tasks.json` geschreven.
+  De app controleert eerst of daar al een andere back-up staat. Bij een verschil kies
+  je expliciet tussen **Download van GitHub** en **Lokale taken uploaden**; niets wordt
+  automatisch overschreven. Zodra beide versies gelijk zijn, worden lokale wijzigingen
+  automatisch naar `tasks.json` geschreven.
 
 Taken worden altijd eerst lokaal opgeslagen. GitHub-sync is optioneel; bij een
 netwerkfout blijft de lokale app werken en probeert hij later opnieuw te synchroniseren.
