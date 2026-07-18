@@ -16,8 +16,9 @@ bij het afvinken.
 - **Weergaven**: schakel tussen **List** (één dag + backlog) en **Board** (alle dagen
   als kolommen naast elkaar, Trello-stijl). Op het bord kun je taken tussen dagen
   **slepen** (desktop).
-- **Volgorde slepen**: pak het ≡-handvat rechts op een taak en sleep hem omhoog of
-  omlaag om de volgorde binnen een lijst of kolom te veranderen — werkt ook op touch.
+- **Verplaatsen en volgorde**: tik op het ↕-handvat om een andere dag te kiezen of
+  gebruik **Earlier / Later**. Je kunt het handvat ook binnen of tussen zichtbare
+  lijsten en bordkolommen slepen; dezelfde pointerbesturing werkt op touch en desktop.
 - **Snel toevoegen**: onderaan elke lijst of kolom zit een invoerveldje — typen,
   Enter, klaar.
 - **Fleet Hangar**: elke voltooide taak wordt een schip in de hangar bovenaan,

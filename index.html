@@ -306,7 +306,7 @@
     color: var(--text-dim);
     font-variant-numeric: tabular-nums;
   }
-  .col-list { list-style: none; margin: 0; padding: 0; min-height: 8px; }
+  .col-list { list-style: none; margin: 0; padding: 0; min-height: 52px; }
   .card {
     display: flex;
     align-items: flex-start;
@@ -488,7 +488,12 @@
     white-space: nowrap;
   }
 
-  .task-list { list-style: none; margin: 0; padding: 0; }
+  .task-list { list-style: none; margin: 0; padding: 0; min-height: 52px; }
+  .task-list.drag-target, .col-list.drag-target {
+    outline: 1px dashed var(--teal);
+    outline-offset: -3px;
+    background: rgba(47, 180, 194, 0.07);
+  }
   .task-row {
     display: flex;
     align-items: stretch;
@@ -1098,6 +1103,25 @@
     font-size: 11px;
     line-height: 1.5;
   }
+  .order-help {
+    margin: 2px 0 8px;
+    color: var(--text-dim);
+    font-size: 10px;
+    line-height: 1.45;
+  }
+  .order-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .order-actions button {
+    min-height: 44px;
+    background: none;
+    border: 1px solid var(--teal-dim);
+    color: var(--teal);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .order-actions button:disabled { opacity: 0.32; cursor: default; }
+  .order-sub-label { margin-top: 12px; }
   .sync-copy a { color: var(--teal); }
   .sync-status {
     min-height: 42px;
@@ -1314,6 +1338,19 @@
       </select>
     </div>
   </div>
+  <div class="sheet-field" id="order-field" hidden>
+    <label>Quick move</label>
+    <div class="order-actions">
+      <button type="button" id="btn-prev-day">← Previous day</button>
+      <button type="button" id="btn-next-day">Next day →</button>
+    </div>
+    <label class="order-sub-label">Position in current day</label>
+    <p class="order-help" id="order-help">Tap a date above to move this directive. Use these buttons to change its order without dragging.</p>
+    <div class="order-actions">
+      <button type="button" id="btn-earlier">↑ Earlier</button>
+      <button type="button" id="btn-later">↓ Later</button>
+    </div>
+  </div>
   <div class="sheet-actions">
     <button type="submit" class="btn-save" id="btn-save">Log directive</button>
     <button type="button" class="btn-delete" id="btn-delete" hidden>Delete</button>
@@ -1502,44 +1539,86 @@ function el(tag, cls, text) {
   return n;
 }
 
-function moveTask(t, day) {
+function moveTaskToDay(t, day) {
+  if (t.day === day) return;
+  const oldIndex = tasks.indexOf(t);
+  if (oldIndex !== -1) tasks.splice(oldIndex, 1);
   t.day = day;
+  let insertAt = tasks.length;
+  for (let i = tasks.length - 1; i >= 0; i--) {
+    if (tasks[i].day === day) { insertAt = i + 1; break; }
+  }
+  tasks.splice(insertAt, 0, t);
+}
+
+function moveTask(t, day) {
+  moveTaskToDay(t, day);
   saveTasks();
   if (day) selectedDay = day;
   blip(true);
   renderAll();
 }
 
-/* ── drag-to-reorder (pointer events, works on touch) ── */
-function commitOrder(ul) {
+/* ── move + reorder (one pointer model for touch and desktop) ── */
+function listDay(ul) {
+  return ul.dataset.day === "backlog" ? null : ul.dataset.day;
+}
+
+function commitOrder(ul, movedTask) {
+  const day = listDay(ul);
+  movedTask.day = day;
   const ids = Array.from(ul.querySelectorAll("[data-id]")).map(x => x.dataset.id);
-  const set = new Set(ids);
+  const ordered = new Map(ids.map(id => [id, tasks.find(t => t.id === id)]));
   let k = 0;
-  tasks = tasks.map(t => set.has(t.id) ? tasks.find(x => x.id === ids[k++]) : t);
+  tasks = tasks.map(t => t.day === day && k < ids.length ? ordered.get(ids[k++]) : t);
   saveTasks();
+  if (day) selectedDay = day;
+  blip(true);
   renderAll();
 }
 
-function attachReorder(handle, li) {
+function targetListAt(x, y) {
+  const target = document.elementFromPoint(x, y);
+  if (!target) return null;
+  const direct = target.closest("ul[data-day]");
+  if (direct) return direct;
+  const column = target.closest(".col");
+  return column ? column.querySelector("ul[data-day]") : null;
+}
+
+function attachReorder(handle, li, task) {
   handle.addEventListener("dragstart", (e) => e.preventDefault());
   handle.addEventListener("pointerdown", (e) => {
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
-    const ul = li.parentElement;
+    const sourceList = li.parentElement;
+    let activeList = sourceList;
+    let dragging = false;
+    const startX = e.clientX;
+    const startY = e.clientY;
     const wasDraggable = li.draggable;
     li.draggable = false;
-    li.classList.add("reordering");
     handle.setPointerCapture(e.pointerId);
 
     const move = (ev) => {
-      const y = ev.clientY;
-      const siblings = Array.from(ul.querySelectorAll("[data-id]")).filter(x => x !== li);
+      if (!dragging && Math.hypot(ev.clientX - startX, ev.clientY - startY) < 7) return;
+      if (!dragging) {
+        dragging = true;
+        li.classList.add("reordering");
+      }
+      const nextList = targetListAt(ev.clientX, ev.clientY) || activeList;
+      if (nextList !== activeList) {
+        activeList.classList.remove("drag-target");
+        activeList = nextList;
+      }
+      activeList.classList.add("drag-target");
+      const siblings = Array.from(activeList.querySelectorAll("[data-id]")).filter(x => x !== li);
       let placed = false;
       for (const sib of siblings) {
         const r = sib.getBoundingClientRect();
-        if (y < r.top + r.height / 2) { ul.insertBefore(li, sib); placed = true; break; }
+        if (ev.clientY < r.top + r.height / 2) { activeList.insertBefore(li, sib); placed = true; break; }
       }
-      if (!placed) ul.appendChild(li);
+      if (!placed) activeList.appendChild(li);
     };
     const up = () => {
       try { handle.releasePointerCapture(e.pointerId); } catch {}
@@ -1547,8 +1626,10 @@ function attachReorder(handle, li) {
       handle.removeEventListener("pointerup", up);
       handle.removeEventListener("pointercancel", up);
       li.classList.remove("reordering");
+      activeList.classList.remove("drag-target");
       li.draggable = wasDraggable;
-      commitOrder(ul);
+      if (dragging) commitOrder(activeList, task);
+      else openSheet(task.id);
     };
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", up);
@@ -1557,10 +1638,10 @@ function attachReorder(handle, li) {
 }
 
 function dragHandle(li, t) {
-  const handle = el("button", "drag-handle", "≡");
+  const handle = el("button", "drag-handle", "↕");
   handle.type = "button";
-  handle.setAttribute("aria-label", "Reorder: " + t.title);
-  attachReorder(handle, li);
+  handle.setAttribute("aria-label", "Move or reorder: " + t.title);
+  attachReorder(handle, li, t);
   return handle;
 }
 
@@ -1840,6 +1921,7 @@ function renderBoard() {
     head.appendChild(el("span", "col-count", colTasks.length ? done + "/" + colTasks.length : "—"));
     col.appendChild(head);
     const ul = el("ul", "col-list");
+    ul.dataset.day = c.date || "backlog";
     colTasks.forEach(t => renderCard(t, ul));
     col.appendChild(ul);
     col.appendChild(quickAddRow(c.date));
@@ -1858,7 +1940,7 @@ function renderBoard() {
       const id = e.dataTransfer.getData("text/plain");
       const t = tasks.find(x => x.id === id);
       if (t && t.day !== c.date) {
-        t.day = c.date;
+        moveTaskToDay(t, c.date);
         saveTasks();
         if (c.date) selectedDay = c.date;
         blip(true);
@@ -1897,6 +1979,7 @@ function renderList() {
   document.getElementById("panel-day").textContent = day.label;
   const list = document.getElementById("task-list");
   list.innerHTML = "";
+  list.dataset.day = selectedDay;
   const dayTasks = tasksFor(selectedDay);
   if (!dayTasks.length) {
     list.appendChild(el("li", "empty-note", "No orders logged for this day. Tap + DIRECTIVE to add one."));
@@ -1908,6 +1991,7 @@ function renderList() {
 
   const bl = document.getElementById("backlog-list");
   bl.innerHTML = "";
+  bl.dataset.day = "backlog";
   const blTasks = backlog();
   if (!blTasks.length) {
     bl.appendChild(el("li", "empty-note", "No unassigned directives. Outstanding work, agent."));
@@ -2211,8 +2295,67 @@ async function reconcileGitHubOnStart() {
 const sheet = document.getElementById("sheet");
 const backdrop = document.getElementById("backdrop");
 const daySelect = document.getElementById("f-day");
+const orderField = document.getElementById("order-field");
+const orderHelp = document.getElementById("order-help");
+const previousDayButton = document.getElementById("btn-prev-day");
+const nextDayButton = document.getElementById("btn-next-day");
+const earlierButton = document.getElementById("btn-earlier");
+const laterButton = document.getElementById("btn-later");
 daySelect.appendChild(new Option("UNASSIGNED", ""));
 DAYS.forEach(d => daySelect.appendChild(new Option(d.abbrev + " " + d.label.split(" ")[1], d.date)));
+
+function updateOrderControls() {
+  const t = editingId ? tasks.find(x => x.id === editingId) : null;
+  orderField.hidden = !t;
+  if (!t) return;
+  const selected = daySelect.value || null;
+  const list = tasks.filter(x => x.day === t.day);
+  const index = list.findIndex(x => x.id === t.id);
+  const dayChanged = selected !== t.day;
+  const dayIndex = DAYS.findIndex(d => d.date === t.day);
+  previousDayButton.disabled = dayChanged || dayIndex <= 0;
+  nextDayButton.disabled = dayChanged || dayIndex === -1 || dayIndex >= DAYS.length - 1;
+  earlierButton.disabled = dayChanged || index <= 0;
+  laterButton.disabled = dayChanged || index === -1 || index >= list.length - 1;
+  orderHelp.textContent = dayChanged
+    ? "Save this new date first; then you can adjust its position."
+    : "Tap a date above to move this directive. Use these buttons to change its order without dragging.";
+}
+
+function shiftEditingDay(delta) {
+  const t = editingId ? tasks.find(x => x.id === editingId) : null;
+  if (!t) return;
+  const index = DAYS.findIndex(d => d.date === t.day);
+  const target = DAYS[index + delta];
+  if (!target) return;
+  moveTaskToDay(t, target.date);
+  saveTasks();
+  selectedDay = target.date;
+  daySelect.value = target.date;
+  blip(true);
+  renderAll();
+  updateOrderControls();
+}
+
+function shiftEditingTask(delta) {
+  const t = editingId ? tasks.find(x => x.id === editingId) : null;
+  if (!t) return;
+  const list = tasks.filter(x => x.day === t.day);
+  const index = list.findIndex(x => x.id === t.id);
+  const swapWith = list[index + delta];
+  if (!swapWith) return;
+  const a = tasks.indexOf(t), b = tasks.indexOf(swapWith);
+  [tasks[a], tasks[b]] = [tasks[b], tasks[a]];
+  saveTasks();
+  renderAll();
+  updateOrderControls();
+}
+
+previousDayButton.addEventListener("click", () => shiftEditingDay(-1));
+nextDayButton.addEventListener("click", () => shiftEditingDay(1));
+earlierButton.addEventListener("click", () => shiftEditingTask(-1));
+laterButton.addEventListener("click", () => shiftEditingTask(1));
+daySelect.addEventListener("change", updateOrderControls);
 
 function openSheet(id) {
   editingId = id || null;
@@ -2223,6 +2366,7 @@ function openSheet(id) {
   document.getElementById("f-cat").value = t ? t.cat : "huis";
   document.getElementById("btn-delete").hidden = !t;
   document.getElementById("btn-save").textContent = t ? "Save" : "Log directive";
+  updateOrderControls();
   sheet.classList.add("open");
   backdrop.classList.add("open");
   if (!t) document.getElementById("f-title").focus();
@@ -2242,7 +2386,11 @@ sheet.addEventListener("submit", (e) => {
   const cat = document.getElementById("f-cat").value;
   if (editingId) {
     const t = tasks.find(x => x.id === editingId);
-    if (t) { t.title = title; t.day = day; t.cat = cat; }
+    if (t) {
+      t.title = title;
+      t.cat = cat;
+      moveTaskToDay(t, day);
+    }
   } else {
     tasks.push({ id: newId(), title, day, cat, done: false });
   }
