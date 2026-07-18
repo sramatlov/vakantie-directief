@@ -2109,6 +2109,7 @@ renderAll();
 /* ── boot sequence ── */
 (function bootSequence() {
   const bootEl = document.getElementById("boot");
+  const loginBtn = document.getElementById("boot-login");
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let seen = false;
   try { seen = sessionStorage.getItem("vd_booted") === "1"; } catch {}
@@ -2135,7 +2136,11 @@ renderAll();
     setTimeout(() => bootEl.remove(), 500);
   }
   function step() {
-    if (i >= lines.length) { timer = setTimeout(finish, 450); return; }
+    if (i >= lines.length) {
+      loginBtn.classList.add("show");
+      loginBtn.focus();
+      return;
+    }
     const row = el("div", "boot-line");
     row.appendChild(el("span", "", lines[i][0].toUpperCase()));
     if (lines[i][1]) row.appendChild(el("span", "boot-ok", lines[i][1].toUpperCase()));
@@ -2144,7 +2149,7 @@ renderAll();
     barFill.style.width = (i / lines.length * 100) + "%";
     timer = setTimeout(step, 270);
   }
-  bootEl.addEventListener("click", finish);
+  loginBtn.addEventListener("click", finish);
   timer = setTimeout(step, 300);
 })();
 </script>
