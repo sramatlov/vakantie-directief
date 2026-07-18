@@ -1092,6 +1092,28 @@
   }
   .btn-cancel:hover { color: var(--text); }
 
+  .sync-copy {
+    margin: -2px 0 12px;
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .sync-copy a { color: var(--teal); }
+  .sync-status {
+    min-height: 42px;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .sync-status.ok { border-color: rgba(87, 194, 137, 0.5); color: var(--green); }
+  .sync-status.error { border-color: rgba(229, 72, 77, 0.55); color: #ff8a8d; }
+  .sync-status.busy { border-color: rgba(47, 180, 194, 0.5); color: var(--teal); }
+  .sync-actions { flex-wrap: wrap; }
+  .sync-actions .btn-save { min-width: 190px; }
+
   .cursor { color: var(--teal); animation: blink 1.1s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
@@ -1237,6 +1259,7 @@
 
 <div class="menu-pop" id="menu-pop">
   <button id="menu-report">▤ Mission report</button>
+  <button id="menu-sync">☁ GitHub sync · OFF</button>
   <button id="menu-export">⇩ Export tasks (backup)</button>
   <button id="menu-import">⇧ Import tasks</button>
 </div>
@@ -1298,6 +1321,26 @@
   </div>
 </form>
 
+<section class="sheet" id="sync-sheet" aria-labelledby="sync-title">
+  <h2 class="sheet-title" id="sync-title">GitHub cloud backup</h2>
+  <p class="sync-copy">
+    Synchroniseert met <strong>sramatlov/vakantie-directief-data</strong>.
+    Maak een <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a>
+    met alleen Contents read/write voor deze repository en plak hem hieronder.
+  </p>
+  <div class="sheet-field">
+    <label for="gh-token">GitHub token</label>
+    <input id="gh-token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="sync-status" id="sync-status" role="status">Cloud backup is nog niet verbonden.</div>
+  <div class="sheet-actions sync-actions">
+    <button type="button" class="btn-save" id="sync-save">Token opslaan &amp; nu back-uppen</button>
+    <button type="button" class="btn-cancel" id="sync-load">Download van GitHub</button>
+    <button type="button" class="btn-delete" id="sync-disconnect">Verbinding wissen</button>
+    <button type="button" class="btn-cancel" id="sync-close">Sluiten</button>
+  </div>
+</section>
+
 <script>
 /* ══════════════════════════════════════════════════════════════
    VACATION DIRECTIVE v3 — all tasks live in localStorage.
@@ -1328,6 +1371,13 @@ const DAYS = [
 ];
 const CAT_LABEL = { huis: "HOME", project: "PROJECT", admin: "ADMIN", rust: "R&R" };
 const LS_TASKS = "vd2_tasks";
+const LS_TASKS_UPDATED = "vd2_tasks_updated_at";
+const LS_TASK_SNAPSHOTS = "vd2_task_snapshots";
+const LS_GITHUB_TOKEN = "vd_github_token";
+const GH_OWNER = "sramatlov";
+const GH_REPO = "vakantie-directief-data";
+const GH_PATH = "tasks.json";
+const GH_API = "https://api.github.com/repos/" + GH_OWNER + "/" + GH_REPO + "/contents/" + GH_PATH;
 
 function dateStr(d) {
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
@@ -1343,11 +1393,11 @@ function inWindow(day) { return day >= DAYS[0].date && day <= DAYS[8].date; }
 let tasks = (() => {
   try {
     const raw = JSON.parse(localStorage.getItem(LS_TASKS));
-    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw)) return sanitizeTasks(raw);
   } catch {}
   return SEED_TASKS.map(t => ({ ...t }));
 })();
-saveTasks();
+saveTasks({ sync: false, touch: false, snapshot: false });
 
 let selectedDay = inWindow(todayStr()) ? todayStr() : DAYS[0].date;
 let editingId = null;
@@ -1357,8 +1407,37 @@ let securedTimer = null;
 let view = (() => { try { return localStorage.getItem("vd_view") || "list"; } catch { return "list"; } })();
 let flashId = null;
 let focusQuickAdd = null;
+let syncTimer = null;
+let syncInFlight = false;
+let syncPending = false;
 
-function saveTasks() { try { localStorage.setItem(LS_TASKS, JSON.stringify(tasks)); } catch {} }
+function sanitizeTasks(list) {
+  return list
+    .filter(t => t && typeof t.title === "string")
+    .map(t => ({
+      id: t.id || newId(),
+      title: t.title,
+      day: t.day || null,
+      cat: CAT_LABEL[t.cat] ? t.cat : "huis",
+      done: !!t.done
+    }));
+}
+
+function saveTasks({ sync = true, touch = true, snapshot = true } = {}) {
+  try {
+    const next = JSON.stringify(tasks);
+    const previous = localStorage.getItem(LS_TASKS);
+    if (snapshot && previous && previous !== next) {
+      let snapshots = [];
+      try { snapshots = JSON.parse(localStorage.getItem(LS_TASK_SNAPSHOTS)) || []; } catch {}
+      snapshots.push({ at: new Date().toISOString(), tasks: JSON.parse(previous) });
+      localStorage.setItem(LS_TASK_SNAPSHOTS, JSON.stringify(snapshots.slice(-12)));
+    }
+    localStorage.setItem(LS_TASKS, next);
+    if (touch) localStorage.setItem(LS_TASKS_UPDATED, String(Date.now()));
+  } catch {}
+  if (sync) scheduleGitHubSync();
+}
 function tasksFor(day) { return tasks.filter(t => t.day === day); }
 function backlog() { return tasks.filter(t => !t.day); }
 function overdue() {
@@ -1938,6 +2017,196 @@ function tickClock() {
 setInterval(tickClock, 1000);
 tickClock();
 
+/* ── GitHub cloud backup ── */
+const syncSheet = document.getElementById("sync-sheet");
+const syncStatus = document.getElementById("sync-status");
+const syncMenuButton = document.getElementById("menu-sync");
+const syncTokenInput = document.getElementById("gh-token");
+
+function getGitHubToken() {
+  try { return localStorage.getItem(LS_GITHUB_TOKEN) || ""; } catch { return ""; }
+}
+
+function localUpdatedAt() {
+  try { return Number(localStorage.getItem(LS_TASKS_UPDATED)) || 0; } catch { return 0; }
+}
+
+function setSyncStatus(kind, message) {
+  syncStatus.className = "sync-status" + (kind ? " " + kind : "");
+  syncStatus.textContent = message;
+  const label = kind === "ok" ? "OK" : kind === "busy" ? "SYNC" : kind === "error" ? "ERROR" : "OFF";
+  syncMenuButton.textContent = "☁ GitHub sync · " + label;
+}
+
+function openSyncSheet() {
+  syncTokenInput.value = getGitHubToken();
+  if (getGitHubToken()) setSyncStatus("", "Verbonden. Lokale wijzigingen worden automatisch geback-upt.");
+  else setSyncStatus("", "Cloud backup is nog niet verbonden.");
+  syncSheet.classList.add("open");
+  backdrop.classList.add("open");
+}
+
+function closeSyncSheet() {
+  syncSheet.classList.remove("open");
+  if (!sheet.classList.contains("open")) backdrop.classList.remove("open");
+}
+
+function encodeBase64(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  return btoa(binary);
+}
+
+function decodeBase64(text) {
+  const binary = atob(text.replace(/\s/g, ""));
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+async function githubRequest(method = "GET", body = null) {
+  const token = getGitHubToken();
+  if (!token) throw new Error("Voer eerst een GitHub-token in.");
+  const response = await fetch(GH_API, {
+    method,
+    headers: {
+      "Accept": "application/vnd.github+json",
+      "Authorization": "Bearer " + token,
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(body ? { "Content-Type": "application/json" } : {})
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  if (response.status === 404 && method === "GET") return null;
+  let data = null;
+  try { data = await response.json(); } catch {}
+  if (!response.ok) {
+    const detail = data && data.message ? data.message : "GitHub antwoordde met status " + response.status;
+    throw new Error(detail);
+  }
+  return data;
+}
+
+function parseRemoteFile(file) {
+  if (!file || !file.content) return null;
+  const payload = JSON.parse(decodeBase64(file.content));
+  const remoteTasks = Array.isArray(payload) ? payload : payload.tasks;
+  if (!Array.isArray(remoteTasks)) throw new Error("tasks.json bevat geen geldige takenlijst.");
+  return {
+    tasks: sanitizeTasks(remoteTasks),
+    updatedAt: payload.updatedAt ? Date.parse(payload.updatedAt) || 0 : 0
+  };
+}
+
+function makeSyncPayload() {
+  let updated = localUpdatedAt();
+  if (!updated) {
+    updated = Date.now();
+    try { localStorage.setItem(LS_TASKS_UPDATED, String(updated)); } catch {}
+  }
+  return {
+    app: "vacation-directive",
+    version: 4,
+    updatedAt: new Date(updated).toISOString(),
+    tasks
+  };
+}
+
+async function putGitHubFile(file, payload) {
+  const body = {
+    message: "Sync tasks from Vacation Directive",
+    content: encodeBase64(JSON.stringify(payload, null, 2)),
+    ...(file && file.sha ? { sha: file.sha } : {})
+  };
+  return githubRequest("PUT", body);
+}
+
+async function pushTasksToGitHub({ force = false } = {}) {
+  if (!getGitHubToken()) return;
+  if (syncInFlight) { syncPending = true; return; }
+  syncInFlight = true;
+  setSyncStatus("busy", "Lokale taken worden naar GitHub geschreven…");
+  try {
+    let file = await githubRequest();
+    const remote = parseRemoteFile(file);
+    if (!force && remote && remote.updatedAt > localUpdatedAt()) {
+      throw new Error("GitHub bevat nieuwere taken. Download die versie eerst.");
+    }
+    const payload = makeSyncPayload();
+    try {
+      await putGitHubFile(file, payload);
+    } catch (error) {
+      if (!/409|sha|conflict/i.test(error.message)) throw error;
+      file = await githubRequest();
+      await putGitHubFile(file, payload);
+    }
+    setSyncStatus("ok", "Back-up voltooid om " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + ".");
+  } catch (error) {
+    setSyncStatus("error", "Synchronisatie mislukt: " + error.message);
+  } finally {
+    syncInFlight = false;
+    if (syncPending) {
+      syncPending = false;
+      scheduleGitHubSync(500);
+    }
+  }
+}
+
+function scheduleGitHubSync(delay = 1600) {
+  if (!getGitHubToken()) return;
+  clearTimeout(syncTimer);
+  setSyncStatus("busy", "Lokale wijziging opgeslagen; GitHub-back-up staat klaar…");
+  syncTimer = setTimeout(() => pushTasksToGitHub(), delay);
+}
+
+async function loadTasksFromGitHub({ automatic = false } = {}) {
+  if (!getGitHubToken()) {
+    setSyncStatus("error", "Voer eerst een GitHub-token in.");
+    return;
+  }
+  setSyncStatus("busy", "Nieuwste taken worden van GitHub gelezen…");
+  try {
+    const file = await githubRequest();
+    const remote = parseRemoteFile(file);
+    if (!remote) throw new Error("tasks.json bestaat nog niet.");
+    if (!automatic && !confirm("Download " + remote.tasks.length + " taken van GitHub? Je huidige lokale versie wordt als herstelpunt bewaard.")) {
+      setSyncStatus("", "Download geannuleerd; lokale taken zijn niet gewijzigd.");
+      return;
+    }
+    tasks = remote.tasks;
+    saveTasks({ sync: false, touch: false });
+    try { localStorage.setItem(LS_TASKS_UPDATED, String(remote.updatedAt || Date.now())); } catch {}
+    renderAll();
+    setSyncStatus("ok", remote.tasks.length + " taken van GitHub geladen.");
+  } catch (error) {
+    setSyncStatus("error", "Download mislukt: " + error.message);
+  }
+}
+
+async function reconcileGitHubOnStart() {
+  if (!getGitHubToken()) { setSyncStatus("", "Cloud backup is nog niet verbonden."); return; }
+  setSyncStatus("busy", "GitHub-back-up wordt gecontroleerd…");
+  try {
+    const file = await githubRequest();
+    const remote = parseRemoteFile(file);
+    if (!remote) { await pushTasksToGitHub({ force: true }); return; }
+    const localTime = localUpdatedAt();
+    if (remote.updatedAt > localTime) {
+      await loadTasksFromGitHub({ automatic: true });
+    } else if (localTime > remote.updatedAt) {
+      await pushTasksToGitHub();
+    } else if (JSON.stringify(remote.tasks) === JSON.stringify(tasks)) {
+      setSyncStatus("ok", "Lokale taken en GitHub zijn gelijk.");
+    } else {
+      setSyncStatus("error", "Lokaal en GitHub verschillen. Kies handmatig uploaden of downloaden.");
+    }
+  } catch (error) {
+    setSyncStatus("error", "Controle mislukt: " + error.message);
+  }
+}
+
 /* ── bottom sheet ── */
 const sheet = document.getElementById("sheet");
 const backdrop = document.getElementById("backdrop");
@@ -2018,10 +2287,14 @@ document.getElementById("btn-undo").addEventListener("click", () => {
 });
 
 document.getElementById("btn-cancel").addEventListener("click", closeSheet);
-backdrop.addEventListener("click", closeSheet);
+backdrop.addEventListener("click", () => {
+  closeSheet();
+  closeSyncSheet();
+});
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (sheet.classList.contains("open")) closeSheet();
+    if (syncSheet.classList.contains("open")) closeSyncSheet();
     if (document.getElementById("report").classList.contains("show")) closeReport();
   }
 });
@@ -2046,6 +2319,28 @@ document.addEventListener("click", (e) => {
 document.getElementById("menu-report").addEventListener("click", () => {
   menuPop.classList.remove("open");
   openReport();
+});
+
+document.getElementById("menu-sync").addEventListener("click", () => {
+  menuPop.classList.remove("open");
+  btnMenu.setAttribute("aria-expanded", "false");
+  openSyncSheet();
+});
+
+document.getElementById("sync-save").addEventListener("click", async () => {
+  const token = syncTokenInput.value.trim();
+  if (!token) { setSyncStatus("error", "Plak eerst een GitHub-token."); return; }
+  try { localStorage.setItem(LS_GITHUB_TOKEN, token); } catch {}
+  await pushTasksToGitHub({ force: true });
+});
+
+document.getElementById("sync-load").addEventListener("click", () => loadTasksFromGitHub());
+document.getElementById("sync-close").addEventListener("click", closeSyncSheet);
+document.getElementById("sync-disconnect").addEventListener("click", () => {
+  try { localStorage.removeItem(LS_GITHUB_TOKEN); } catch {}
+  syncTokenInput.value = "";
+  clearTimeout(syncTimer);
+  setSyncStatus("", "GitHub-verbinding verwijderd. Je lokale taken blijven bewaard.");
 });
 
 document.getElementById("menu-export").addEventListener("click", () => {
@@ -2099,12 +2394,16 @@ document.getElementById("import-file").addEventListener("change", (e) => {
 /* ── service worker ── */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" })
+      .then(registration => registration.update())
+      .catch(() => {});
   });
 }
 
 setView(view);
 renderAll();
+reconcileGitHubOnStart();
+window.addEventListener("online", () => scheduleGitHubSync(300));
 
 /* ── boot sequence ── */
 (function bootSequence() {

@@ -27,11 +27,14 @@ bij het afvinken.
 - **Doorschuiven**: onafgemaakte taken van eerdere dagen geven een waarschuwing
   bovenaan met één knop om ze naar vandaag te verplaatsen.
 - **Nieuwe taak**: knop **+ DIRECTIVE** rechtsonder.
-- **Backup**: menu **⋯** → exporteer of importeer je taken als JSON-bestand
-  (handig om je lijst van telefoon naar PC te verhuizen).
+- **Backup**: menu **⋯** → exporteer of importeer je taken als JSON-bestand.
+- **GitHub cloud backup**: menu **⋯** → *GitHub sync*. Voer een fine-grained token
+  in met `Contents: read/write`, uitsluitend voor `sramatlov/vakantie-directief-data`.
+  Daarna worden lokale wijzigingen automatisch naar `tasks.json` geschreven.
 
-Alle taken worden lokaal op het apparaat opgeslagen (localStorage) — er is geen
-server en geen account nodig.
+Taken worden altijd eerst lokaal opgeslagen. GitHub-sync is optioneel; bij een
+netwerkfout blijft de lokale app werken en probeert hij later opnieuw te synchroniseren.
+Voor iedere lokale vervanging bewaart de app bovendien maximaal twaalf herstelpunten.
 
 ## Installeren als app
 
