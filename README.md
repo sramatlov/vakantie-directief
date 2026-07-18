@@ -13,6 +13,11 @@ bij het afvinken.
   waarin je omschrijving, dag en sector kunt aanpassen. Na wissen kun je 5 seconden
   op **Undo** tikken.
 - **Snel inplannen**: ongeplande taken hebben knopjes **▸ Today** / **▸ Tmrw**.
+- **Weergaven**: schakel tussen **List** (één dag + backlog) en **Board** (alle dagen
+  als kolommen naast elkaar, Trello-stijl). Op het bord kun je taken tussen dagen
+  **slepen** (desktop).
+- **Snel toevoegen**: onderaan elke lijst of kolom zit een invoerveldje — typen,
+  Enter, klaar.
 - **Doorschuiven**: onafgemaakte taken van eerdere dagen geven een waarschuwing
   bovenaan met één knop om ze naar vandaag te verplaatsen.
 - **Nieuwe taak**: knop **+ DIRECTIVE** rechtsonder.

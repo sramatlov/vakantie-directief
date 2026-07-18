@@ -139,14 +139,149 @@
   .bar-fill.green { background: var(--green); }
 
   /* ── day rail ────────────────────────────────────────────── */
-  .rail-label {
+  .rail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     margin: 16px 0 6px;
+  }
+  .rail-label {
     font-size: 10px;
     letter-spacing: 0.26em;
     color: var(--text-dim);
     text-transform: uppercase;
   }
   .rail-label::before { content: "▸ "; color: var(--teal); }
+
+  .view-toggle { display: flex; border: 1px solid var(--line-bright); }
+  .view-toggle button {
+    background: none;
+    border: 0;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .view-toggle button.active { background: var(--amber); color: #17110A; }
+  .view-toggle button:not(.active):hover { color: var(--amber); }
+
+  /* ── board view ──────────────────────────────────────────── */
+  body[data-view="board"] .list-ui { display: none; }
+  .board {
+    display: none;
+    margin-top: 2px;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    align-items: flex-start;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-bright) transparent;
+  }
+  body[data-view="board"] .board { display: flex; }
+  .col {
+    flex: 0 0 236px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    scroll-snap-align: start;
+  }
+  .col.dragover { border-color: var(--teal); background: #12202A; }
+  .col-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .col-title {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .col.today-col .col-title { color: var(--amber); }
+  .col.today-col .col-title::after { content: " ●"; color: var(--red); }
+  .col-count {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .col-list { list-style: none; margin: 0; padding: 0; min-height: 8px; }
+  .card {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--line);
+    cursor: grab;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:active { cursor: grabbing; }
+  .card.dragging { opacity: 0.4; }
+  .card-check {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    margin: -4px 0 -4px -4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  .card-check:focus-visible { outline: 2px solid var(--teal); }
+  .card-check .task-box { width: 17px; height: 17px; }
+  .card-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    background: none;
+    border: 0;
+    padding: 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+  }
+  .card-main:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .card-title { min-width: 0; overflow-wrap: anywhere; }
+  .card.done .card-title {
+    color: var(--text-dim);
+    text-decoration: line-through;
+    text-decoration-color: var(--green);
+    text-decoration-thickness: 1px;
+  }
+
+  /* ── inline quick add ────────────────────────────────────── */
+  .quick-add { display: flex; border-top: 1px dashed var(--line-bright); }
+  .quick-add input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: none;
+    border: 0;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 16px; /* prevents iOS zoom */
+    padding: 11px 12px;
+  }
+  .quick-add input::placeholder { color: var(--text-dim); font-size: 13px; }
+  .quick-add input:focus { outline: 1px solid var(--teal); outline-offset: -1px; }
 
   .day-rail {
     display: grid;
@@ -300,8 +435,8 @@
     transform: scale(0);
     transition: transform 0.18s cubic-bezier(.3,1.6,.5,1);
   }
-  .task-row.done .task-box { border-color: var(--green); }
-  .task-row.done .task-box::after { transform: scale(1); }
+  .task-row.done .task-box, .card.done .task-box { border-color: var(--green); }
+  .task-row.done .task-box::after, .card.done .task-box::after { transform: scale(1); }
 
   .task-body {
     flex: 1 1 auto;
@@ -357,7 +492,7 @@
     padding: 1px 6px;
     display: none;
   }
-  .task-row.done .stamp { display: inline-block; }
+  .task-row.done .stamp, .card.done .stamp { display: inline-block; }
 
   .quick {
     background: none;
@@ -372,7 +507,7 @@
   }
   .quick:hover { border-color: var(--teal); background: rgba(84,200,206,0.1); }
 
-  .task-row.just-done::before {
+  .task-row.just-done::before, .card.just-done::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -662,7 +797,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .cursor { animation: none; }
-    .task-row.just-done::before { animation: none; }
+    .task-row.just-done::before, .card.just-done::before { animation: none; }
     .secured-box { animation: none; }
     .bar-fill, .sheet, .backdrop, .toast, .task-box::after { transition: none; }
   }
@@ -729,23 +864,33 @@
 
   <div id="rollover-slot"></div>
 
-  <div class="rail-label">Operational days</div>
-  <div class="day-rail" id="day-rail" role="tablist" aria-label="Days"></div>
+  <div class="rail-head">
+    <div class="rail-label" id="rail-label">Operational days</div>
+    <div class="view-toggle" role="group" aria-label="View">
+      <button type="button" id="view-list">List</button>
+      <button type="button" id="view-board">Board</button>
+    </div>
+  </div>
+  <div class="day-rail list-ui" id="day-rail" role="tablist" aria-label="Days"></div>
 
-  <section class="panel" aria-live="polite">
+  <div class="board" id="board" aria-label="Week board"></div>
+
+  <section class="panel list-ui" aria-live="polite">
     <div class="panel-head">
       <div class="panel-title">Daily orders — <span class="accent" id="panel-day">—</span></div>
       <div class="panel-meta" id="panel-count">—</div>
     </div>
     <ul class="task-list" id="task-list"></ul>
+    <div id="qa-day-slot"></div>
   </section>
 
-  <section class="panel">
+  <section class="panel list-ui">
     <div class="panel-head">
       <div class="panel-title">Unassigned <span class="accent">directives</span></div>
       <div class="panel-meta" id="backlog-count">—</div>
     </div>
     <ul class="task-list" id="backlog-list"></ul>
+    <div id="qa-backlog-slot"></div>
   </section>
 </div>
 
@@ -859,6 +1004,9 @@ let editingId = null;
 let pendingDelete = null;
 let toastTimer = null;
 let securedTimer = null;
+let view = (() => { try { return localStorage.getItem("vd_view") || "list"; } catch { return "list"; } })();
+let flashId = null;
+let focusQuickAdd = null;
 
 function saveTasks() { try { localStorage.setItem(LS_TASKS, JSON.stringify(tasks)); } catch {} }
 function tasksFor(day) { return tasks.filter(t => t.day === day); }
@@ -933,40 +1081,41 @@ function moveTask(t, day) {
   renderAll();
 }
 
+function toggleDone(t) {
+  const wasComplete = t.day ? dayComplete(t.day) : false;
+  t.done = !t.done;
+  saveTasks();
+  if (t.done) {
+    flashId = t.id;
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+  blip(t.done);
+  if (t.done && t.day && !wasComplete && dayComplete(t.day)) {
+    const d = DAYS.find(x => x.date === t.day);
+    celebrate(d ? d.label : t.day);
+  }
+  renderAll();
+}
+
 function renderRow(t, list) {
   const li = el("li", "task-row" + (t.done ? " done" : ""));
+  if (flashId === t.id && t.done) li.classList.add("just-done");
 
   const check = el("button", "task-check");
   check.type = "button";
   check.setAttribute("aria-label", (t.done ? "Reopen: " : "Complete: ") + t.title);
   check.setAttribute("aria-pressed", t.done ? "true" : "false");
   check.appendChild(el("span", "task-box"));
-  check.addEventListener("click", () => {
-    const wasComplete = t.day ? dayComplete(t.day) : false;
-    t.done = !t.done;
-    saveTasks();
-    li.classList.toggle("done", t.done);
-    check.setAttribute("aria-pressed", t.done ? "true" : "false");
-    if (t.done) {
-      li.classList.remove("just-done");
-      void li.offsetWidth;
-      li.classList.add("just-done");
-      if (navigator.vibrate) navigator.vibrate(30);
-    }
-    blip(t.done);
-    if (t.done && t.day && !wasComplete && dayComplete(t.day)) {
-      const d = DAYS.find(x => x.date === t.day);
-      celebrate(d ? d.label : t.day);
-    }
-    renderStats();
-    renderRail();
-    renderRollover();
-  });
+  check.addEventListener("click", () => toggleDone(t));
   li.appendChild(check);
 
-  const body = el("button", "task-body");
-  body.type = "button";
+  const body = el("div", "task-body");
+  body.setAttribute("role", "button");
+  body.setAttribute("tabindex", "0");
   body.setAttribute("aria-label", "Edit: " + t.title);
+  body.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target === body) { e.preventDefault(); openSheet(t.id); }
+  });
   body.appendChild(el("span", "task-title", t.title));
   const meta = el("span", "task-meta");
   meta.appendChild(el("span", "chip " + t.cat, CAT_LABEL[t.cat] || t.cat));
@@ -991,6 +1140,126 @@ function renderRow(t, list) {
   li.appendChild(body);
 
   list.appendChild(li);
+}
+
+function quickAddRow(day) {
+  const wrap = el("div", "quick-add");
+  wrap.dataset.day = day === null ? "backlog" : day;
+  const input = document.createElement("input");
+  input.type = "text";
+  input.maxLength = 120;
+  input.autocomplete = "off";
+  input.placeholder = day === null ? "+ Quick add unassigned…" : "+ Quick add…";
+  input.setAttribute("aria-label", "Quick add directive" + (day ? " for " + day : ""));
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const title = input.value.trim();
+    if (!title) return;
+    tasks.push({ id: newId(), title, day, cat: "huis", done: false });
+    saveTasks();
+    focusQuickAdd = wrap.dataset.day;
+    blip(true);
+    renderAll();
+  });
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function renderCard(t, ul) {
+  const li = el("li", "card" + (t.done ? " done" : ""));
+  if (flashId === t.id && t.done) li.classList.add("just-done");
+  li.draggable = true;
+  li.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("text/plain", t.id);
+    e.dataTransfer.effectAllowed = "move";
+    li.classList.add("dragging");
+  });
+  li.addEventListener("dragend", () => li.classList.remove("dragging"));
+
+  const check = el("button", "card-check");
+  check.type = "button";
+  check.setAttribute("aria-label", (t.done ? "Reopen: " : "Complete: ") + t.title);
+  check.setAttribute("aria-pressed", t.done ? "true" : "false");
+  check.appendChild(el("span", "task-box"));
+  check.addEventListener("click", () => toggleDone(t));
+  li.appendChild(check);
+
+  const main = el("div", "card-main");
+  main.setAttribute("role", "button");
+  main.setAttribute("tabindex", "0");
+  main.setAttribute("aria-label", "Edit: " + t.title);
+  main.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target === main) { e.preventDefault(); openSheet(t.id); }
+  });
+  main.appendChild(el("span", "card-title", t.title));
+  const meta = el("span", "task-meta");
+  meta.appendChild(el("span", "chip " + t.cat, CAT_LABEL[t.cat] || t.cat));
+  meta.appendChild(el("span", "stamp", "COMPLETE"));
+  if (!t.day && !t.done) {
+    const today = todayStr(), tmrw = tomorrowStr();
+    if (inWindow(today)) {
+      const q = el("button", "quick", "▸ Today");
+      q.type = "button";
+      q.addEventListener("click", (e) => { e.stopPropagation(); moveTask(t, today); });
+      meta.appendChild(q);
+    }
+    if (inWindow(tmrw)) {
+      const q = el("button", "quick", "▸ Tmrw");
+      q.type = "button";
+      q.addEventListener("click", (e) => { e.stopPropagation(); moveTask(t, tmrw); });
+      meta.appendChild(q);
+    }
+  }
+  main.appendChild(meta);
+  main.addEventListener("click", () => openSheet(t.id));
+  li.appendChild(main);
+
+  ul.appendChild(li);
+}
+
+function renderBoard() {
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  const today = todayStr();
+  const cols = [{ date: null, abbrev: "UNASSIGNED" }].concat(DAYS);
+  cols.forEach(c => {
+    const colTasks = c.date === null ? backlog() : tasksFor(c.date);
+    const done = colTasks.filter(t => t.done).length;
+    const col = el("div", "col" + (c.date === today ? " today-col" : ""));
+    const head = el("div", "col-head");
+    head.appendChild(el("span", "col-title", c.date ? c.abbrev + " " + c.date.slice(8) : "Unassigned"));
+    head.appendChild(el("span", "col-count", colTasks.length ? done + "/" + colTasks.length : "—"));
+    col.appendChild(head);
+    const ul = el("ul", "col-list");
+    colTasks.forEach(t => renderCard(t, ul));
+    col.appendChild(ul);
+    col.appendChild(quickAddRow(c.date));
+
+    col.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      col.classList.add("dragover");
+    });
+    col.addEventListener("dragleave", (e) => {
+      if (!col.contains(e.relatedTarget)) col.classList.remove("dragover");
+    });
+    col.addEventListener("drop", (e) => {
+      e.preventDefault();
+      col.classList.remove("dragover");
+      const id = e.dataTransfer.getData("text/plain");
+      const t = tasks.find(x => x.id === id);
+      if (t && t.day !== c.date) {
+        t.day = c.date;
+        saveTasks();
+        if (c.date) selectedDay = c.date;
+        blip(true);
+        renderAll();
+      }
+    });
+
+    board.appendChild(col);
+  });
 }
 
 function renderRollover() {
@@ -1038,6 +1307,13 @@ function renderList() {
     blTasks.forEach(t => renderRow(t, bl));
   }
   document.getElementById("backlog-count").textContent = blTasks.length + " pending";
+
+  const daySlot = document.getElementById("qa-day-slot");
+  daySlot.innerHTML = "";
+  daySlot.appendChild(quickAddRow(selectedDay));
+  const blSlot = document.getElementById("qa-backlog-slot");
+  blSlot.innerHTML = "";
+  blSlot.appendChild(quickAddRow(null));
 }
 
 function renderRail() {
@@ -1089,7 +1365,36 @@ function renderStats() {
     done + "/" + tasks.length + " <span class='cursor'>▮</span>";
 }
 
-function renderAll() { renderRail(); renderList(); renderStats(); renderRollover(); }
+function renderAll() {
+  renderRail();
+  renderList();
+  renderBoard();
+  renderStats();
+  renderRollover();
+  flashId = null;
+  if (focusQuickAdd !== null) {
+    const scope = view === "board" ? "#board" : ".panel";
+    const input = document.querySelector(scope + " .quick-add[data-day='" + focusQuickAdd + "'] input");
+    if (input) input.focus();
+    focusQuickAdd = null;
+  }
+}
+
+/* ── view toggle ── */
+function setView(v) {
+  view = v;
+  document.body.dataset.view = v;
+  try { localStorage.setItem("vd_view", v); } catch {}
+  document.getElementById("view-list").classList.toggle("active", v === "list");
+  document.getElementById("view-board").classList.toggle("active", v === "board");
+  document.getElementById("rail-label").textContent = v === "board" ? "Operations board" : "Operational days";
+  if (v === "board") {
+    const todayCol = document.querySelector(".col.today-col");
+    if (todayCol) todayCol.scrollIntoView({ inline: "center", block: "nearest" });
+  }
+}
+document.getElementById("view-list").addEventListener("click", () => setView("list"));
+document.getElementById("view-board").addEventListener("click", () => setView("board"));
 
 /* ── clock ── */
 function tickClock() {
@@ -1259,6 +1564,7 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+setView(view);
 renderAll();
 </script>
 </body>
