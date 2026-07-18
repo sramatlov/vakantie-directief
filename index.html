@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0E13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>VAKANTIE-DIRECTIEF · 18.07–26.07</title>
+<style>
+  :root {
+    --ground: #0A0E13;
+    --panel: #101822;
+    --panel-2: #0C1219;
+    --line: #1E2A38;
+    --line-bright: #2C3E52;
+    --amber: #F2A33C;
+    --amber-dim: #8A5E24;
+    --teal: #54C8CE;
+    --teal-dim: #2A5E62;
+    --green: #63D98F;
+    --red: #E5484D;
+    --text: #C9D6E3;
+    --text-dim: #6E8199;
+    --mono: "Cascadia Mono", Consolas, "JetBrains Mono", "SF Mono", "Roboto Mono", monospace;
+    --display: Bahnschrift, "Archivo Narrow", "Arial Narrow", "Helvetica Neue", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.5;
+    overscroll-behavior-y: none;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0,0,0,0.35) 100%);
+  }
+
+  .tablet {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 12px 12px calc(86px + env(safe-area-inset-bottom));
+  }
+
+  /* ── header ──────────────────────────────────────────────── */
+  header {
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    padding: 12px 14px 10px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .emblem { flex: 0 0 auto; width: 44px; height: 44px; }
+  .emblem svg { display: block; width: 100%; height: 100%; }
+
+  .head-main { flex: 1 1 auto; min-width: 0; }
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--teal);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  h1 {
+    margin: 2px 0 3px;
+    font-family: var(--display);
+    font-size: clamp(18px, 4.5vw, 28px);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--amber);
+    text-wrap: balance;
+  }
+  .agent-line {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+  .agent-line b { color: var(--text); font-weight: 400; }
+
+  .head-clock {
+    flex: 0 0 auto;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .clock-time { font-size: 19px; color: var(--teal); letter-spacing: 0.06em; }
+  .clock-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase; }
+
+  /* ── status strip ────────────────────────────────────────── */
+  .status-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-top: 0;
+  }
+  .stat { background: var(--panel-2); padding: 8px 12px; }
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .stat-value {
+    font-size: 15px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-value .ok { color: var(--green); }
+  .stat-value .warn { color: var(--amber); }
+
+  .bar { height: 5px; background: var(--line); margin-top: 5px; position: relative; overflow: hidden; }
+  .bar-fill {
+    position: absolute; inset: 0 auto 0 0; width: 0%;
+    background: var(--amber);
+    transition: width 0.6s cubic-bezier(.2,.9,.3,1);
+  }
+  .bar-fill.teal { background: var(--teal); }
+  .bar-fill.green { background: var(--green); }
+
+  /* ── day rail ────────────────────────────────────────────── */
+  .rail-label {
+    margin: 16px 0 6px;
+    font-size: 10px;
+    letter-spacing: 0.26em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .rail-label::before { content: "▸ "; color: var(--teal); }
+
+  .day-rail {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(72px, 1fr));
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-bright) transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+  .day-cell {
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    padding: 8px 8px 7px;
+    min-height: 64px;
+    cursor: pointer;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    text-align: left;
+    scroll-snap-align: start;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .day-cell:hover { border-color: var(--line-bright); }
+  .day-cell:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+  .day-cell .d-abbrev { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; }
+  .day-cell .d-num {
+    font-family: var(--display);
+    font-size: 21px; font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .day-cell .d-count { font-size: 9px; letter-spacing: 0.1em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .day-cell.selected { border-color: var(--amber); background: #16202C; }
+  .day-cell.selected .d-abbrev, .day-cell.selected .d-num { color: var(--amber); }
+  .day-cell.today .d-abbrev::after { content: " ●"; color: var(--red); }
+  .day-cell.complete .d-num { color: var(--green); }
+
+  /* ── panels & task rows ──────────────────────────────────── */
+  .panel {
+    margin-top: 14px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    position: relative;
+  }
+  .panel::before, .panel::after {
+    content: "";
+    position: absolute;
+    width: 12px; height: 12px;
+    border: 1px solid var(--amber-dim);
+  }
+  .panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .panel::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+  .panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .panel-title {
+    font-family: var(--display);
+    font-size: 15px; font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .panel-title .accent { color: var(--amber); }
+  .panel-meta {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .task-list { list-style: none; margin: 0; padding: 0; }
+  .task-row {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .task-row:last-child { border-bottom: 0; }
+
+  .task-check {
+    flex: 0 0 auto;
+    width: 52px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 0;
+    border-right: 1px solid var(--line);
+    cursor: pointer;
+    padding: 0;
+  }
+  .task-check:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+  .task-box {
+    width: 20px; height: 20px;
+    border: 1px solid var(--amber-dim);
+    position: relative;
+    transition: border-color 0.15s;
+  }
+  .task-check:hover .task-box { border-color: var(--amber); }
+  .task-box::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    background: var(--green);
+    transform: scale(0);
+    transition: transform 0.18s cubic-bezier(.3,1.6,.5,1);
+  }
+  .task-row.done .task-box { border-color: var(--green); }
+  .task-row.done .task-box::after { transform: scale(1); }
+
+  .task-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .task-body:hover { background: #131C28; }
+  .task-body:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+
+  .task-title { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .task-row.done .task-title {
+    color: var(--text-dim);
+    text-decoration: line-through;
+    text-decoration-color: var(--green);
+    text-decoration-thickness: 1px;
+  }
+
+  .chip {
+    flex: 0 0 auto;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid;
+  }
+  .chip.huis    { color: var(--amber); border-color: var(--amber-dim); }
+  .chip.project { color: var(--teal);  border-color: var(--teal-dim); }
+  .chip.rust    { color: var(--green); border-color: #2C5E42; }
+  .chip.admin   { color: #9AB0C6;      border-color: var(--line-bright); }
+
+  .stamp {
+    flex: 0 0 auto;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--green);
+    border: 1px solid var(--green);
+    padding: 1px 6px;
+    display: none;
+  }
+  .task-row.done .stamp { display: inline-block; }
+
+  .task-row.just-done::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(99,217,143,0.22), transparent);
+    animation: sweep 0.55s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes sweep {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+  }
+
+  .empty-note {
+    padding: 18px 14px;
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+  .empty-note::before { content: "▚ "; color: var(--teal); }
+
+  /* ── bottom toolbar ──────────────────────────────────────── */
+  .toolbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 40;
+    background: var(--panel-2);
+    border-top: 1px solid var(--line-bright);
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toolbar-status {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .toolbar-status .blocks { color: var(--amber); }
+  .btn-new {
+    flex: 0 0 auto;
+    background: var(--amber);
+    color: #17110A;
+    border: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 12px 18px;
+    cursor: pointer;
+  }
+  .btn-new:hover { background: #FFB84D; }
+  .btn-new:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .btn-menu {
+    flex: 0 0 auto;
+    width: 44px; height: 44px;
+    background: none;
+    border: 1px solid var(--line-bright);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .btn-menu:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+  .menu-pop {
+    position: fixed;
+    right: 12px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    z-index: 45;
+    background: var(--panel);
+    border: 1px solid var(--line-bright);
+    display: none;
+    flex-direction: column;
+    min-width: 220px;
+  }
+  .menu-pop.open { display: flex; }
+  .menu-pop button {
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 13px 14px;
+    cursor: pointer;
+  }
+  .menu-pop button:last-child { border-bottom: 0; }
+  .menu-pop button:hover { background: #131C28; color: var(--amber); }
+
+  /* ── bottom sheet (nieuw/bewerk) ─────────────────────────── */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(4, 7, 10, 0.7);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 70;
+    max-width: 560px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid var(--line-bright);
+    border-bottom: 0;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    transform: translateY(105%);
+    transition: transform 0.25s cubic-bezier(.2,.9,.3,1);
+  }
+  .sheet.open { transform: translateY(0); }
+
+  .sheet-title {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin: 0 0 12px;
+  }
+  .sheet label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .sheet input, .sheet select {
+    width: 100%;
+    background: var(--ground);
+    border: 1px solid var(--line-bright);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 16px; /* voorkomt iOS-zoom bij focus */
+    padding: 11px 10px;
+    border-radius: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .sheet input:focus, .sheet select:focus { outline: 1px solid var(--teal); }
+  .sheet-field { margin-bottom: 10px; }
+  .sheet-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sheet-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .btn-save {
+    flex: 1 1 auto;
+    background: var(--amber);
+    color: #17110A;
+    border: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 13px;
+    cursor: pointer;
+  }
+  .btn-save:hover { background: #FFB84D; }
+  .btn-delete {
+    flex: 0 0 auto;
+    background: none;
+    border: 1px solid var(--red);
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 13px 14px;
+    cursor: pointer;
+  }
+  .btn-delete:hover { background: rgba(229,72,77,0.12); }
+  .btn-cancel {
+    flex: 0 0 auto;
+    background: none;
+    border: 1px solid var(--line-bright);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 13px 14px;
+    cursor: pointer;
+  }
+  .btn-cancel:hover { color: var(--text); }
+
+  .cursor { color: var(--teal); animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; }
+    .task-row.just-done::before { animation: none; }
+    .bar-fill, .sheet, .backdrop, .task-box::after { transition: none; }
+  }
+
+  @media (max-width: 560px) {
+    .status-strip { grid-template-columns: 1fr 1fr; }
+    .stat:first-child { grid-column: 1 / -1; }
+    .head-clock { display: none; }
+    .day-rail { grid-template-columns: repeat(9, 68px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="tablet">
+  <header>
+    <div class="emblem" aria-hidden="true">
+      <svg viewBox="0 0 60 60">
+        <g fill="none" stroke="#F2A33C" stroke-width="2">
+          <circle cx="30" cy="30" r="26"/>
+          <circle cx="30" cy="30" r="10" fill="#F2A33C" stroke="none"/>
+        </g>
+        <g stroke="#F2A33C" stroke-width="4">
+          <line x1="30" y1="2"  x2="30" y2="12"/>
+          <line x1="30" y1="48" x2="30" y2="58"/>
+          <line x1="2"  y1="30" x2="12" y2="30"/>
+          <line x1="48" y1="30" x2="58" y2="30"/>
+          <line x1="10" y1="10" x2="17" y2="17"/>
+          <line x1="43" y1="43" x2="50" y2="50"/>
+          <line x1="50" y1="10" x2="43" y2="17"/>
+          <line x1="17" y1="43" x2="10" y2="50"/>
+        </g>
+        <circle cx="30" cy="30" r="4" fill="#0A0E13"/>
+      </svg>
+    </div>
+    <div class="head-main">
+      <div class="eyebrow">Imperiaal planningsterminal · sector thuis</div>
+      <h1>Vakantie-directief 18.07 — 26.07</h1>
+      <div class="agent-line">AGENT <b>ROBBY</b> · TOEGANGSNIVEAU <b>VOLLEDIG</b> · STATUS <b>VERLOF</b></div>
+    </div>
+    <div class="head-clock">
+      <div class="clock-time" id="clock">--:--:--</div>
+      <div class="clock-sub" id="clock-date">—</div>
+    </div>
+  </header>
+
+  <div class="status-strip">
+    <div class="stat">
+      <div class="stat-label">Weekconformiteit</div>
+      <div class="stat-value" id="stat-week">—</div>
+      <div class="bar"><div class="bar-fill" id="bar-week"></div></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Dagorders vandaag</div>
+      <div class="stat-value" id="stat-today">—</div>
+      <div class="bar"><div class="bar-fill teal" id="bar-today"></div></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Resterend verlof</div>
+      <div class="stat-value" id="stat-left">—</div>
+      <div class="bar"><div class="bar-fill green" id="bar-left"></div></div>
+    </div>
+  </div>
+
+  <div class="rail-label">Operationele dagen</div>
+  <div class="day-rail" id="day-rail" role="tablist" aria-label="Dagen"></div>
+
+  <section class="panel" aria-live="polite">
+    <div class="panel-head">
+      <div class="panel-title">Dagorders — <span class="accent" id="panel-day">—</span></div>
+      <div class="panel-meta" id="panel-count">—</div>
+    </div>
+    <ul class="task-list" id="task-list"></ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Ongeplande <span class="accent">directieven</span></div>
+      <div class="panel-meta" id="backlog-count">—</div>
+    </div>
+    <ul class="task-list" id="backlog-list"></ul>
+  </section>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-status" id="footer-text">CONFORMITEIT — <span class="cursor">▮</span></div>
+  <button class="btn-new" id="btn-new">+ Directief</button>
+  <button class="btn-menu" id="btn-menu" aria-label="Menu" aria-expanded="false">⋯</button>
+</div>
+
+<div class="menu-pop" id="menu-pop">
+  <button id="menu-export">⇩ Exporteer taken (backup)</button>
+  <button id="menu-import">⇧ Importeer taken</button>
+</div>
+<input type="file" id="import-file" accept=".json,application/json" hidden>
+
+<div class="backdrop" id="backdrop"></div>
+<form class="sheet" id="sheet">
+  <h2 class="sheet-title" id="sheet-title">Nieuw directief</h2>
+  <div class="sheet-field">
+    <label for="f-title">Omschrijving</label>
+    <input id="f-title" type="text" maxlength="120" placeholder="bv. Schuur opruimen" autocomplete="off">
+  </div>
+  <div class="sheet-row-2 sheet-field">
+    <div>
+      <label for="f-day">Dag</label>
+      <select id="f-day"></select>
+    </div>
+    <div>
+      <label for="f-cat">Sector</label>
+      <select id="f-cat">
+        <option value="huis">HUIS</option>
+        <option value="project">PROJECT</option>
+        <option value="admin">ADMIN</option>
+        <option value="rust">ONTSPANNING</option>
+      </select>
+    </div>
+  </div>
+  <div class="sheet-actions">
+    <button type="submit" class="btn-save" id="btn-save">Registreer</button>
+    <button type="button" class="btn-delete" id="btn-delete" hidden>Wis</button>
+    <button type="button" class="btn-cancel" id="btn-cancel">Sluit</button>
+  </div>
+</form>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   VAKANTIE-DIRECTIEF v2 — alle taken leven in localStorage.
+   Bij eerste start wordt eenmalig de startlijst geladen.
+   ══════════════════════════════════════════════════════════════ */
+const SEED_TASKS = [
+  { id: "t1", title: "Huis opruimen",                                   day: "2026-07-18", cat: "huis",    done: false },
+  { id: "t2", title: "Bed verschonen",                                  day: "2026-07-18", cat: "huis",    done: false },
+  { id: "t3", title: "Fatbike fixen",                                   day: "2026-07-18", cat: "project", done: false },
+  { id: "t4", title: "Return of the Jedi kijken",                       day: "2026-07-18", cat: "rust",    done: false },
+  { id: "t5", title: "Huisarts bellen / langsgaan — pols en uitslag",   day: "2026-07-20", cat: "admin",   done: false },
+  { id: "t6", title: "Tuinhuis ophalen en in elkaar zetten met Stefan", day: null,          cat: "project", done: false },
+  { id: "t7", title: "Hal schilderen en opruimen",                      day: null,          cat: "project", done: false },
+  { id: "t8", title: "Grote slaapkamer schoonmaken",                    day: null,          cat: "huis",    done: false },
+  { id: "t9", title: "Naar de kapper",                                  day: null,          cat: "admin",   done: false }
+];
+
+const DAYS = [
+  { date: "2026-07-18", abbrev: "ZA", label: "Zaterdag 18.07" },
+  { date: "2026-07-19", abbrev: "ZO", label: "Zondag 19.07" },
+  { date: "2026-07-20", abbrev: "MA", label: "Maandag 20.07" },
+  { date: "2026-07-21", abbrev: "DI", label: "Dinsdag 21.07" },
+  { date: "2026-07-22", abbrev: "WO", label: "Woensdag 22.07" },
+  { date: "2026-07-23", abbrev: "DO", label: "Donderdag 23.07" },
+  { date: "2026-07-24", abbrev: "VR", label: "Vrijdag 24.07" },
+  { date: "2026-07-25", abbrev: "ZA", label: "Zaterdag 25.07" },
+  { date: "2026-07-26", abbrev: "ZO", label: "Zondag 26.07" }
+];
+const CAT_LABEL = { huis: "HUIS", project: "PROJECT", admin: "ADMIN", rust: "ONTSPANNING" };
+const LS_TASKS = "vd2_tasks";
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+let tasks = (() => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_TASKS));
+    if (Array.isArray(raw)) return raw;
+  } catch {}
+  return SEED_TASKS.map(t => ({ ...t }));
+})();
+saveTasks();
+
+let selectedDay = todayStr() >= DAYS[0].date && todayStr() <= DAYS[8].date ? todayStr() : DAYS[0].date;
+let editingId = null;
+
+function saveTasks() { try { localStorage.setItem(LS_TASKS, JSON.stringify(tasks)); } catch {} }
+function tasksFor(day) { return tasks.filter(t => t.day === day); }
+function backlog() { return tasks.filter(t => !t.day); }
+function newId() { return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+/* ── audio blip ── */
+let audioCtx = null;
+function blip(done) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "square";
+    o.frequency.value = done ? 660 : 330;
+    if (done) o.frequency.setValueAtTime(880, audioCtx.currentTime + 0.07);
+    g.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.16);
+  } catch {}
+}
+
+/* ── rendering ── */
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+function renderRow(t, list) {
+  const li = el("li", "task-row" + (t.done ? " done" : ""));
+
+  const check = el("button", "task-check");
+  check.type = "button";
+  check.setAttribute("aria-label", (t.done ? "Heropen: " : "Vink af: ") + t.title);
+  check.setAttribute("aria-pressed", t.done ? "true" : "false");
+  check.appendChild(el("span", "task-box"));
+  check.addEventListener("click", () => {
+    t.done = !t.done;
+    saveTasks();
+    li.classList.toggle("done", t.done);
+    check.setAttribute("aria-pressed", t.done ? "true" : "false");
+    if (t.done) {
+      li.classList.remove("just-done");
+      void li.offsetWidth;
+      li.classList.add("just-done");
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+    blip(t.done);
+    renderStats();
+    renderRail();
+  });
+  li.appendChild(check);
+
+  const body = el("button", "task-body");
+  body.type = "button";
+  body.setAttribute("aria-label", "Bewerk: " + t.title);
+  body.appendChild(el("span", "task-title", t.title));
+  body.appendChild(el("span", "chip " + t.cat, CAT_LABEL[t.cat] || t.cat));
+  body.appendChild(el("span", "stamp", "VOLTOOID"));
+  body.addEventListener("click", () => openSheet(t.id));
+  li.appendChild(body);
+
+  list.appendChild(li);
+}
+
+function renderList() {
+  const day = DAYS.find(d => d.date === selectedDay);
+  document.getElementById("panel-day").textContent = day.label;
+  const list = document.getElementById("task-list");
+  list.innerHTML = "";
+  const dayTasks = tasksFor(selectedDay);
+  if (!dayTasks.length) {
+    list.appendChild(el("li", "empty-note", "Geen dagorders geregistreerd. Tik op + DIRECTIEF om er een toe te voegen."));
+  } else {
+    dayTasks.forEach(t => renderRow(t, list));
+  }
+  const done = dayTasks.filter(t => t.done).length;
+  document.getElementById("panel-count").textContent = done + "/" + dayTasks.length + " voltooid";
+
+  const bl = document.getElementById("backlog-list");
+  bl.innerHTML = "";
+  const blTasks = backlog();
+  if (!blTasks.length) {
+    bl.appendChild(el("li", "empty-note", "Geen ongeplande directieven. Uitstekend werk, agent."));
+  } else {
+    blTasks.forEach(t => renderRow(t, bl));
+  }
+  document.getElementById("backlog-count").textContent = blTasks.length + " open";
+}
+
+function renderRail() {
+  const rail = document.getElementById("day-rail");
+  rail.innerHTML = "";
+  const today = todayStr();
+  DAYS.forEach(d => {
+    const dayTasks = tasksFor(d.date);
+    const done = dayTasks.filter(t => t.done).length;
+    const cell = el("button", "day-cell");
+    cell.type = "button";
+    cell.setAttribute("role", "tab");
+    cell.setAttribute("aria-selected", d.date === selectedDay ? "true" : "false");
+    if (d.date === selectedDay) cell.classList.add("selected");
+    if (d.date === today) cell.classList.add("today");
+    if (dayTasks.length && done === dayTasks.length) cell.classList.add("complete");
+    cell.appendChild(el("div", "d-abbrev", d.abbrev));
+    cell.appendChild(el("div", "d-num", d.date.slice(8)));
+    cell.appendChild(el("div", "d-count", dayTasks.length ? done + "/" + dayTasks.length : "—"));
+    cell.addEventListener("click", () => { selectedDay = d.date; renderAll(); });
+    rail.appendChild(cell);
+  });
+}
+
+function renderStats() {
+  const done = tasks.filter(t => t.done).length;
+  const pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+  document.getElementById("stat-week").innerHTML =
+    "<span class='" + (pct >= 60 ? "ok" : "warn") + "'>" + pct + "%</span> · " + done + "/" + tasks.length;
+  document.getElementById("bar-week").style.width = pct + "%";
+
+  const today = todayStr();
+  const refDay = today >= DAYS[0].date && today <= DAYS[8].date ? today : selectedDay;
+  const tToday = tasksFor(refDay);
+  const dToday = tToday.filter(t => t.done).length;
+  document.getElementById("stat-today").textContent = dToday + "/" + tToday.length + " voltooid";
+  document.getElementById("bar-today").style.width = (tToday.length ? dToday / tToday.length * 100 : 0) + "%";
+
+  const end = new Date(2026, 6, 26);
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const left = Math.max(0, Math.round((end - now) / 86400000) + 1);
+  document.getElementById("stat-left").textContent = left + (left === 1 ? " dag" : " dagen");
+  document.getElementById("bar-left").style.width = (left / 9 * 100) + "%";
+
+  const blocks = Math.round(pct / 10);
+  document.getElementById("footer-text").innerHTML =
+    "CONFORMITEIT " + pct + "% <span class='blocks'>" + "▮".repeat(blocks) + "░".repeat(10 - blocks) + "</span> · " +
+    done + "/" + tasks.length + " <span class='cursor'>▮</span>";
+}
+
+function renderAll() { renderRail(); renderList(); renderStats(); }
+
+/* ── clock ── */
+function tickClock() {
+  const n = new Date();
+  document.getElementById("clock").textContent =
+    [n.getHours(), n.getMinutes(), n.getSeconds()].map(x => String(x).padStart(2,"0")).join(":");
+  const d = DAYS.find(x => x.date === todayStr());
+  document.getElementById("clock-date").textContent = d ? d.label : todayStr();
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+/* ── bottom sheet ── */
+const sheet = document.getElementById("sheet");
+const backdrop = document.getElementById("backdrop");
+const daySelect = document.getElementById("f-day");
+daySelect.appendChild(new Option("ONGEPLAND", ""));
+DAYS.forEach(d => daySelect.appendChild(new Option(d.abbrev + " " + d.label.split(" ")[1], d.date)));
+
+function openSheet(id) {
+  editingId = id || null;
+  const t = id ? tasks.find(x => x.id === id) : null;
+  document.getElementById("sheet-title").textContent = t ? "Bewerk directief" : "Nieuw directief";
+  document.getElementById("f-title").value = t ? t.title : "";
+  daySelect.value = t ? (t.day || "") : selectedDay;
+  document.getElementById("f-cat").value = t ? t.cat : "huis";
+  document.getElementById("btn-delete").hidden = !t;
+  document.getElementById("btn-save").textContent = t ? "Sla op" : "Registreer";
+  sheet.classList.add("open");
+  backdrop.classList.add("open");
+  if (!t) document.getElementById("f-title").focus();
+}
+
+function closeSheet() {
+  sheet.classList.remove("open");
+  backdrop.classList.remove("open");
+  editingId = null;
+}
+
+sheet.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const title = document.getElementById("f-title").value.trim();
+  if (!title) { document.getElementById("f-title").focus(); return; }
+  const day = daySelect.value || null;
+  const cat = document.getElementById("f-cat").value;
+  if (editingId) {
+    const t = tasks.find(x => x.id === editingId);
+    if (t) { t.title = title; t.day = day; t.cat = cat; }
+  } else {
+    tasks.push({ id: newId(), title, day, cat, done: false });
+  }
+  saveTasks();
+  if (day) selectedDay = day;
+  closeSheet();
+  renderAll();
+});
+
+document.getElementById("btn-delete").addEventListener("click", () => {
+  if (!editingId) return;
+  tasks = tasks.filter(x => x.id !== editingId);
+  saveTasks();
+  closeSheet();
+  renderAll();
+});
+
+document.getElementById("btn-cancel").addEventListener("click", closeSheet);
+backdrop.addEventListener("click", closeSheet);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && sheet.classList.contains("open")) closeSheet();
+});
+
+document.getElementById("btn-new").addEventListener("click", () => openSheet(null));
+
+/* ── menu: export / import ── */
+const menuPop = document.getElementById("menu-pop");
+const btnMenu = document.getElementById("btn-menu");
+btnMenu.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = menuPop.classList.toggle("open");
+  btnMenu.setAttribute("aria-expanded", open ? "true" : "false");
+});
+document.addEventListener("click", (e) => {
+  if (menuPop.classList.contains("open") && !menuPop.contains(e.target)) {
+    menuPop.classList.remove("open");
+    btnMenu.setAttribute("aria-expanded", "false");
+  }
+});
+
+document.getElementById("menu-export").addEventListener("click", () => {
+  const blob = new Blob(
+    [JSON.stringify({ app: "vakantie-directief", version: 2, tasks }, null, 2)],
+    { type: "application/json" }
+  );
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "vakantie-directief-backup.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  menuPop.classList.remove("open");
+});
+
+document.getElementById("menu-import").addEventListener("click", () => {
+  document.getElementById("import-file").click();
+  menuPop.classList.remove("open");
+});
+
+document.getElementById("import-file").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const imported = Array.isArray(data) ? data : data.tasks;
+      if (!Array.isArray(imported)) throw new Error("geen takenlijst");
+      const valid = imported.filter(t => t && typeof t.title === "string");
+      if (!valid.length) throw new Error("lege lijst");
+      if (confirm("Importeer " + valid.length + " taken? Dit vervangt je huidige lijst.")) {
+        tasks = valid.map(t => ({
+          id: t.id || newId(),
+          title: t.title,
+          day: t.day || null,
+          cat: CAT_LABEL[t.cat] ? t.cat : "huis",
+          done: !!t.done
+        }));
+        saveTasks();
+        renderAll();
+      }
+    } catch {
+      alert("Import mislukt: dit is geen geldig backup-bestand van deze app.");
+    }
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+});
+
+/* ── service worker ── */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
+renderAll();
+</script>
+</body>
+</html>
