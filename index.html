@@ -58,6 +58,83 @@
     padding: 12px 12px calc(86px + env(safe-area-inset-bottom));
   }
 
+  /* ── boot screen ─────────────────────────────────────────── */
+  .boot {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--ground);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    cursor: pointer;
+    transition: opacity 0.45s;
+  }
+  .boot.done { opacity: 0; pointer-events: none; }
+  .boot-emblem {
+    width: 88px;
+    height: 88px;
+    animation: boot-spin 9s linear infinite;
+    filter: drop-shadow(0 0 14px rgba(242, 163, 60, 0.35));
+  }
+  @keyframes boot-spin { to { transform: rotate(360deg); } }
+  .boot-title {
+    margin-top: 18px;
+    font-family: var(--display);
+    font-size: clamp(20px, 5vw, 30px);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    text-align: center;
+    text-wrap: balance;
+  }
+  .boot-sub {
+    margin-top: 4px;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--teal);
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .boot-log {
+    margin-top: 26px;
+    width: min(340px, 86vw);
+    min-height: 104px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .boot-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 1.5px 0;
+  }
+  .boot-ok { color: var(--green); text-align: right; }
+  .boot-bar {
+    width: min(340px, 86vw);
+    height: 4px;
+    background: var(--line);
+    margin-top: 16px;
+  }
+  .boot-bar-fill {
+    height: 100%;
+    width: 0;
+    background: var(--amber);
+    transition: width 0.25s;
+  }
+  .boot-skip {
+    margin-top: 14px;
+    font-size: 9px;
+    letter-spacing: 0.24em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
   /* ── header ──────────────────────────────────────────────── */
   header {
     border: 1px solid var(--line);
@@ -988,6 +1065,31 @@
 </head>
 <body>
 
+<div class="boot" id="boot" role="status" aria-label="Terminal starting up">
+  <svg class="boot-emblem" viewBox="0 0 60 60" aria-hidden="true">
+    <g fill="none" stroke="#F2A33C" stroke-width="2">
+      <circle cx="30" cy="30" r="26"/>
+      <circle cx="30" cy="30" r="10" fill="#F2A33C" stroke="none"/>
+    </g>
+    <g stroke="#F2A33C" stroke-width="4">
+      <line x1="30" y1="2"  x2="30" y2="12"/>
+      <line x1="30" y1="48" x2="30" y2="58"/>
+      <line x1="2"  y1="30" x2="12" y2="30"/>
+      <line x1="48" y1="30" x2="58" y2="30"/>
+      <line x1="10" y1="10" x2="17" y2="17"/>
+      <line x1="43" y1="43" x2="50" y2="50"/>
+      <line x1="50" y1="10" x2="43" y2="17"/>
+      <line x1="17" y1="43" x2="10" y2="50"/>
+    </g>
+    <circle cx="30" cy="30" r="4" fill="#0A0E13"/>
+  </svg>
+  <div class="boot-title">Imperial Planning Terminal</div>
+  <div class="boot-sub">Home sector · Vacation directive 18.07–26.07</div>
+  <div class="boot-log" id="boot-log"></div>
+  <div class="boot-bar"><div class="boot-bar-fill" id="boot-bar-fill"></div></div>
+  <div class="boot-skip">Tap to skip</div>
+</div>
+
 <div class="tablet">
   <header>
     <div class="emblem" aria-hidden="true">
@@ -1897,6 +1999,48 @@ if ("serviceWorker" in navigator) {
 
 setView(view);
 renderAll();
+
+/* ── boot sequence ── */
+(function bootSequence() {
+  const bootEl = document.getElementById("boot");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let seen = false;
+  try { seen = sessionStorage.getItem("vd_booted") === "1"; } catch {}
+  if (seen || reduced) { bootEl.remove(); return; }
+
+  const doneCount = tasks.filter(t => t.done).length;
+  const d = DAYS.find(x => x.date === todayStr());
+  const lines = [
+    ["▸ Power core", "online"],
+    ["▸ Authenticating agent Robby", "clearance full"],
+    ["▸ Loading directives", tasks.length + " found"],
+    ["▸ Fleet hangar", doneCount + (doneCount === 1 ? " ship" : " ships") + " docked"],
+    ["▸ Schedule sync", d ? d.label : "off-window"],
+    ["▸ Terminal ready", ""]
+  ];
+  const log = document.getElementById("boot-log");
+  const barFill = document.getElementById("boot-bar-fill");
+  let i = 0, timer = null;
+
+  function finish() {
+    clearTimeout(timer);
+    try { sessionStorage.setItem("vd_booted", "1"); } catch {}
+    bootEl.classList.add("done");
+    setTimeout(() => bootEl.remove(), 500);
+  }
+  function step() {
+    if (i >= lines.length) { timer = setTimeout(finish, 450); return; }
+    const row = el("div", "boot-line");
+    row.appendChild(el("span", "", lines[i][0].toUpperCase()));
+    if (lines[i][1]) row.appendChild(el("span", "boot-ok", lines[i][1].toUpperCase()));
+    log.appendChild(row);
+    i++;
+    barFill.style.width = (i / lines.length * 100) + "%";
+    timer = setTimeout(step, 270);
+  }
+  bootEl.addEventListener("click", finish);
+  timer = setTimeout(step, 300);
+})();
 </script>
 </body>
 </html>
